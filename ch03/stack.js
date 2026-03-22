@@ -4,18 +4,24 @@ import { DoublyLinkedList } from "./doubly-linked-list.js";
  * init, pop, push
  */
 
-class Stack {
+export class Stack {
   constructor() {
     this.box = [];
   }
-
+  size = 0;
   push(...el) {
     this.box.push(...el);
+    this.size += el.length;
     return this;
   }
 
   pop() {
+    --this.size;
     this.box.pop();
+  }
+
+  peek() {
+    return this.box[this.size - 1];
   }
 
   toString() {

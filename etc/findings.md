@@ -246,3 +246,187 @@ self-contained.
 - Passing `isLeft` into the visitor requires `_traverse` to know which
   branch it's on (`node === parent.left`), or you pass it explicitly as a
   parameter at each recursive call
+
+---
+
+## `Proxy` `get` trap receives Symbol keys — `Number(Symbol)` throws
+
+### What happened
+`for...of` resolves the iterator by reading `obj[Symbol.iterator]`. The
+`get` trap intercepts **all** property reads — string keys and Symbol keys.
+So `key` arrives as an actual Symbol value. Then:
+
+```js
+const coercedNum = Number(key);  // TypeError: Cannot convert a Symbol value to a number
+```
+
+`Number(Symbol)` is unconditionally illegal by spec — it throws before
+`Number.isFinite()` ever runs. This is not a Proxy-specific quirk; the
+same error fires anywhere you pass a Symbol to `Number()`.
+
+### Why Symbols reach the trap at all
+The `get` trap is a universal interception point — it fires for every
+property access on the proxy, including:
+- `"0"`, `"length"`, `"insert"` — string keys
+- `Symbol.iterator`, `Symbol.toPrimitive`, `Symbol.toStringTag` — well-known Symbols
+- Any custom Symbol used as a key
+
+JS built-ins (like `for...of`, spread, `JSON.stringify`) reach for
+well-known Symbols internally, so a Proxy on a class that implements
+`[Symbol.iterator]` will see those Symbol reads immediately.
+
+### The fix — guard Symbols before coercing
+```js
+get(obj, key) {
+  if (typeof key === 'symbol') return Reflect.get(...arguments);  // pass through
+  const coercedNum = Number(key);
+  if (Number.isFinite(coercedNum)) return obj.array[coercedNum];
+  return Reflect.get(...arguments);
+}
+```
+
+Check `typeof key === 'symbol'` first and delegate to `Reflect.get` — this
+lets the class's own `[Symbol.iterator]` definition handle iteration
+normally without the trap interfering.
+
+### Resources
+- MDN — Symbol (why it cannot be coerced to number): https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol#type_coercions
+- MDN — Well-known Symbols (`Symbol.iterator` etc.): https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Symbol#well-known_symbols
+- MDN — Proxy `get` handler (receives string and Symbol keys): https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/get
+- MDN — Reflect.get (delegate to default behavior): https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Reflect/get
+- 33jsconcepts — Proxy & Reflect: https://33jsconcepts.com/beyond/concepts/proxy-reflect
+
+---
+
+## Making an object subscriptable with custom behavior (`Proxy`)
+
+### The situation
+All JS objects already support bracket notation (`obj[key]`) — that is not
+the problem. The problem is doing something *custom* when a key is accessed,
+the way Python's `__getitem__` works. JS solves this with `Proxy`.
+
+### `Proxy` + `get` trap
+```js
+const handler = {
+  get(target, key) {
+    // key is always a string or Symbol
+    return key in target ? target[key] : `no key: ${key}`;
+  }
+};
+
+const obj = new Proxy({ a: 1, b: 2 }, handler);
+console.log(obj["a"]);  // 1
+console.log(obj["z"]);  // "no key: z"
+console.log(obj[0]);    // "no key: 0"  — numeric index coerced to string "0"
+```
+
+`Proxy` wraps any object (the *target*) and intercepts operations via a
+*handler* object whose methods are called **traps**. The `get` trap fires on
+every property read, including bracket and dot notation.
+
+### Other useful traps
+
+| Trap | Fires on |
+|---|---|
+| `get(target, key)` | `obj[key]` / `obj.key` reads |
+| `set(target, key, value)` | `obj[key] = value` writes |
+| `has(target, key)` | `key in obj` |
+| `deleteProperty(target, key)` | `delete obj[key]` |
+| `apply(target, thisArg, args)` | function calls (target must be a function) |
+
+### Numeric index coercion
+JS coerces numeric indices to strings before the trap fires:
+`obj[2]` → trap receives `"2"`, not `2`. Account for this when
+mapping array-like indices to custom logic.
+
+### Resources
+- MDN — Proxy: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+- MDN — Proxy `get` handler: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/get
+- MDN — Reflect (companion API, call default behavior inside traps): https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Reflect
+- 33jsconcepts — Proxy & Reflect: https://33jsconcepts.com/beyond/concepts/proxy-reflect
+
+---
+
+## JS arrays: no out-of-bounds error, dynamic size
+
+### Why no error
+JS arrays are objects. Indices are just property keys (`"0"`, `"1"`, …).
+Reading a missing key returns `undefined` — the same as any absent property —
+rather than throwing. There is no fixed memory block to overflow.
+
+```js
+const a = [1, 2, 3];
+console.log(a[10]);   // undefined — no error
+console.log(a[-1]);   // undefined — negative indices are just missing keys
+```
+
+### Why dynamic
+Because the backing store is not a pre-allocated fixed-size buffer (unlike C/Java
+arrays). The engine manages memory internally; from the language's perspective
+you can assign at any index and `length` adjusts:
+
+```js
+const a = [];
+a[5] = "x";
+console.log(a.length);  // 6
+console.log(a);         // [ <5 empty items>, 'x' ]  ← sparse array
+```
+
+Slots between 0 and 4 are "holes" — they don't exist as properties, so
+iterating with `forEach` / `map` skips them, but `length` still covers the range.
+
+### Practical consequence
+Out-of-bounds bugs in JS fail silently — you get `undefined` propagating
+through later logic rather than an immediate crash. Always validate index
+ranges explicitly when the bound matters.
+
+### Resources
+- MDN — Array (dynamic length, sparse arrays): https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array
+- MDN — Array `length` property: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/length
+- 33jsconcepts — Primitives vs Objects (arrays are objects): https://33jsconcepts.com/concepts/primitives-objects
+- 33jsconcepts — Data Structures: https://33jsconcepts.com/concepts/data-structures
+
+---
+
+## Sequential pointer reassignment in linked-list reversal
+
+### The question
+In the reversal loop:
+```js
+currNode.next = prevNode;  // (1)
+prevNode = currNode;       // (2)
+currNode = newNode;        // (3)
+```
+After (2), `prevNode` and `currNode` point to the same object — does (3)
+corrupt anything? And does (1) clobber the pointer we still need?
+
+### Why it works
+
+**`newNode` is pre-saved before any mutation**
+The loop computes `newNode` (the next node to visit) at the top of the
+iteration — before line (1) runs. By the time `currNode.next` is
+overwritten in (1), the forward reference is already safe in `newNode`.
+
+**Each line is a distinct, completed operation**
+JS evaluates assignments sequentially and fully before moving on:
+
+| Step | What changes | What stays the same |
+|---|---|---|
+| `currNode.next = prevNode` | mutates the *property* of the object `currNode` refers to | `currNode` still holds the same reference |
+| `prevNode = currNode` | the *variable* `prevNode` now points at the same object | the object itself is unchanged; `currNode` still valid |
+| `currNode = newNode` | the *variable* `currNode` moves forward | `prevNode` (already set) is unaffected |
+
+**Variables vs. objects**
+`currNode` and `prevNode` are variables that hold *references* to objects.
+Reassigning a variable (`prevNode = currNode`) changes which object the
+variable points to — it does not merge or alias the objects themselves.
+After (2), both variables reference the same node object, but that object
+is only read in (3) (`currNode = newNode`) — not mutated — so having two
+references to it causes no harm.
+
+### Resources
+- MDN — Assignment operators (sequential evaluation): https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Assignment
+- MDN — Working with objects (reference vs. value): https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Working_with_objects
+- MDN — Memory management / references: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Memory_management#references
+- 33jsconcepts — Primitives vs Objects (reference semantics): https://33jsconcepts.com/concepts/primitives-objects
+- 33jsconcepts — Data Structures: https://33jsconcepts.com/concepts/data-structures

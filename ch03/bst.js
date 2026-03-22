@@ -55,7 +55,51 @@ class BSTree {
   }
 
   delete(val) {
+    // todo: handle possible duplicate vals
     const found = this.search(val);
+    if (!found) return;
+    let parent;
+    const hasParent = found.parent;
+
+    if (!hasParent) {
+      parent = new BSTNode();
+      parent.left = found;
+      this.root = parent;
+    } else parent = found.parent;
+
+    const isLeftChild = parent.left === found;
+
+    // ?case 1: has no kids
+    if (!found.left && !found.right) {
+      if (isLeftChild) parent.left = null;
+      else parent.right = null;
+    } else if (found.left && found.right) {
+      // ?case 2: has two kids
+      console.log("has two kids");
+      const smallestRight = this.min(found.right);
+      const smallestRightParent = smallestRight.parent;
+      smallestRightParent.left = null;
+
+      if (isLeftChild) parent.left = smallestRight;
+      else parent.right = smallestRight;
+    } else {
+      //?case 3: hass one child
+      console.log("has one kid");
+      if (isLeftChild) {
+        if (found.left) parent.left = found.left;
+        else parent.left = found.right;
+      } else {
+        if (found.left) parent.right = found.left;
+        else parent.right = found.right;
+      }
+    }
+
+    if (!hasParent) {
+      found.parent = null;
+      this.root = found;
+    }
+    this.size -= 1;
+    return this;
   }
   _createInitTree(values) {
     for (let val of values) {
@@ -73,7 +117,7 @@ class BSTree {
       if (parent.right) this._attachBSTNode(val, parent.right);
       else {
         const child = new BSTNode(val);
-        // child.parent = parent;
+        child.parent = parent;
         parent.right = child;
 
         this.size += 1;
@@ -82,7 +126,7 @@ class BSTree {
       if (parent.left) this._attachBSTNode(val, parent.left);
       else {
         const child = new BSTNode(val);
-        // child.parent = parent; TODO: with weakmaps
+        child.parent = parent; // TODO: with weakmaps
         parent.left = child;
         this.size += 1;
       }
@@ -139,40 +183,22 @@ class BSTree {
 }
 
 const t1 = new BSTree(4, 2, 7, 10, 1);
+// console.log(t1.toString());
+// console.log(Object.__proto__.constructor === BSTree);
+// console.log("max:", t1.max());
+// console.log("min: ", t1.min());
+console.log("searching 2: ", t1.search(10));
+// console.log("deleting 2: ");
+// t1.delete(2);
+console.log("insert 3,8:", t1.insert(3).insert(8));
+console.log("deleting 2: ");
+t1.delete(2);
+console.log(
+  JSON.stringify(t1, (key, val) => (key === "parent" ? undefined : val)),
+);
 console.log(t1.toString());
-console.log(Object.__proto__.constructor === BSTree);
-console.log("max:", t1.max());
-console.log("min: ", t1.min());
-console.log("search: ", t1.search(7));
-console.log("insert 3:", t1.insert(3).insert(8).insert(6));
-console.log(t1.toString());
-// console.log(JSON.stringify(t1));
 
-// {"size":8,
-// "root":{"value":4,
-//      "left":{"value":2,
-//          "left":{"value":1,
-//              "left" :null,
-//               "right":null},
-//          "right":{"value":3,
-//              "left":null,
-//              "right":null}},
-//      "right":{"value":7,
-//          "left":{"value":6,
-//              "left":null,
-//              "right":null},
-//          "right":{"value":10,
-//              "left":{"value":8,
-//                  "left":null,
-//                  "right":null},
-//              "right":null}}}}
-
-// Problem: You are given the task of reading n numbers and then printing them
-// out in sorted order. Suppose you have access to a balanced dictionary data structure,
-//  which supports the operations search, insert, delete, minimum, maximum,
-// successor, and predecessor each in O(log n) time.
-// 1. How can you sort in O(n log n) time using only insert and in-order traversal?
-// 2. How can you sort in O(n log n) time using only minimum, successor, and
-// insert?
-// 3. How can you sort in O(n log n) time using only minimum, insert, delete,
-// search?
+// {"size":8,"root":{"value":4,"left":{"value":2,"left":{"value":1,
+// "left":null,"right":null},"right":{"value":3,"left":null,"right"
+// :null}},"right":{"value":7,"left":null,"right":{"value":10,"left
+// ":{"value":8,"left":null,"right":null},"right":null}}}}

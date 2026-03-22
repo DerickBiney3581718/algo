@@ -1,11 +1,11 @@
-class ListNode {
+export class ListNode {
   constructor(value, next = null) {
     this.value = value;
     this.next = next;
   }
 }
 
-class LinkedList {
+export class LinkedList {
   size = 0;
   constructor(iterable = []) {
     this.head = null;
@@ -104,5 +104,3 @@ class LinkedList {
 
 // const emptyLinkedList = new LinkedList([]);
 // console.log("search for 10", emptyLinkedList.search(10));
-// console.log("append 5 : ", emptyLinkedList.push(5));
-// console.log("append 5 : ", emptyLinkedList.push(5));
