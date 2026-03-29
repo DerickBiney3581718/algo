@@ -10,7 +10,7 @@
 //? achieves constant amortized cost per deletion.
 // soln: shrink to 1/2 when 3/4 of array is empty.
 
-class DynamicArray {
+export class DynamicArray {
   size = 0;
   idx = 0;
   array = [];
