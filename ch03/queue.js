@@ -5,13 +5,13 @@ import { DoublyLinkedList } from "./doubly-linked-list.js";
  * dequeue
  */
 
-class Queue {
+export class Queue {
   constructor() {
     this.box = [];
   }
 
   enqueue(el) {
-    this.box.unshift(el);
+    this.box.push(el);
     return this;
   }
 
@@ -36,11 +36,11 @@ class Queue {
   }
 }
 
-const q1 = new Queue();
-q1.enqueue("jojo").enqueue("loretta").enqueue("momo");
-console.log(String(q1));
-q1.dequeue();
-console.log(q1.toString());
+// const q1 = new Queue();
+// q1.enqueue("jojo").enqueue("loretta").enqueue("momo");
+// console.log(String(q1));
+// q1.dequeue();
+// console.log(q1.toString());
 
 class ListQueue {
   constructor() {
@@ -71,9 +71,9 @@ class ListQueue {
   }
 }
 
-const lq1 = new ListQueue();
-console.log(String(lq1.enqueue("pic").enqueue("the").enqueue("fin")));
+// const lq1 = new ListQueue();
+// console.log(String(lq1.enqueue("pic").enqueue("the").enqueue("fin")));
 
-lq1.dequeue();
+// lq1.dequeue();
 
-console.log("peeking dequeue: ", lq1.peek());
+// console.log("peeking dequeue: ", lq1.peek());
