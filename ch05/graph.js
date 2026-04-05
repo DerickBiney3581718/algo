@@ -1,20 +1,32 @@
 import { stdout } from "node:process";
 import * as readline from "node:readline/promises";
 
-const SEEDED_EDGES = [
-  [1, 2],
-  [1, 3],
-  [2, 4],
-  [2, 5],
-  [3, 5],
-  [3, 6],
-  [4, 7],
-  [5, 7],
-  [5, 8],
-  [6, 8],
-  [7, 9],
-  [8, 9],
-];
+const SEEDED_EDGES = Math.round(Math.random())
+  ? [
+      [1, 2],
+      [1, 3],
+      [2, 4],
+      [2, 5],
+      [3, 5],
+      [3, 6],
+      [4, 7],
+      [5, 7],
+      [5, 8],
+      [6, 8],
+      [7, 9],
+      [8, 9],
+    ]
+  : [
+      [1, 2],
+      [1, 3],
+      [2, 3],
+      [4, 5],
+      [4, 6],
+      [5, 6],
+      [7, 8],
+      [8, 9],
+      [7, 9],
+    ];
 
 const N_EDGES = 12;
 const N_VERTICES = 9;
@@ -37,6 +49,8 @@ export class Graph {
       "undiscovered",
     ]),
   );
+  verticesParents = Array.from({ length: this.MAX_V + 1 });
+
   nEdges = 0;
   nVertices = 0;
   isDirected;
@@ -90,6 +104,9 @@ export class Graph {
     return this.edgesList.findIndex((value) => value?.next);
   }
 
+  setParent(vtx, parentIdx) {
+    this.verticesParents[vtx] = parentIdx;
+  }
   _attachEdge(vtx, edge) {
     const xEdgeList = this.edgesList[vtx];
     const nextEdgeNode = new EdgeNode(edge);
@@ -121,6 +138,8 @@ export class Graph {
 
   getAdjacencyList(vtx) {
     let currEdge = this.edgesList[vtx];
+    if (!currEdge) return null;
+
     const adjacencyList = [];
     while (currEdge) {
       adjacencyList.push(currEdge.value);
@@ -138,6 +157,7 @@ export class Graph {
       if (!node) return;
       let line = `${vtx}->`;
 
+      //   todo: add early stopping
       while (currNode) {
         console.log("c node", currNode);
         line += currNode.value + "->";
