@@ -17,7 +17,7 @@ export class Stack {
 
   pop() {
     --this.size;
-    this.box.pop();
+    return this.box.pop();
   }
 
   peek() {
@@ -31,12 +31,12 @@ export class Stack {
   }
 }
 
-const newStack = new Stack();
-newStack.push(9, 8, 7, 6);
-console.log(newStack.toString());
-newStack.pop();
-newStack.pop();
-console.log(String(newStack));
+// const newStack = new Stack();
+// newStack.push(9, 8, 7, 6);
+// console.log(newStack.toString());
+// newStack.pop();
+// newStack.pop();
+// console.log(String(newStack));
 
 class ListStack {
   constructor() {
@@ -49,7 +49,7 @@ class ListStack {
   }
 
   pop() {
-    this.box.removeFromEnd();
+    return this.box.removeFromEnd();
   }
 
   toString() {
@@ -60,8 +60,8 @@ class ListStack {
   }
 }
 
-const newLStack = new Stack();
-newLStack.push(9, 8, 7, 6);
-console.log(newLStack.toString());
-newLStack.pop();
-console.log(String(newLStack));
+// const newLStack = new Stack();
+// newLStack.push(9, 8, 7, 6);
+// console.log(newLStack.toString());
+// newLStack.pop();
+// console.log(String(newLStack));

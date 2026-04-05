@@ -430,3 +430,84 @@ references to it causes no harm.
 - MDN — Memory management / references: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Memory_management#references
 - 33jsconcepts — Primitives vs Objects (reference semantics): https://33jsconcepts.com/concepts/primitives-objects
 - 33jsconcepts — Data Structures: https://33jsconcepts.com/concepts/data-structures
+
+---
+
+## DFS exit times all equal their entry times — primitive `time` passed by value
+
+### What happened
+Every vertex's exit time matched its entry time exactly:
+```
+I'm in:  1 @ 1   →   I'm out:  1 @ 1
+I'm in:  3 @ 2   →   I'm out:  3 @ 2
+...
+```
+`exit[root] = time` and `time += 1` appear to do nothing.
+
+### Root cause — primitives are passed by value
+
+`time` is a number. Numbers in JS are primitives — passed **by value**, not
+by reference. Each recursive call receives its own independent copy:
+
+```js
+function dfs(graph, root, entry, exit, time) {
+  time += 1;          // mutates this frame's local copy only
+  entry[root] = time;
+
+  dfs(graph, neighbor, entry, exit, time);  // passes a snapshot of time
+  // ↑ that call may increment time 10 more times internally
+  // none of those increments are visible here when it returns
+
+  exit[root] = time;  // time is still whatever it was before the recursive call
+  time += 1;          // same — only affects this frame, thrown away on return
+}
+```
+
+When the recursive call returns, this frame's `time` is exactly what it was
+before the call — all increments inside the recursion are invisible to the caller.
+That is why exit times mirror entry times: no time has passed from the caller's
+perspective.
+
+### Contrast with objects (passed by reference)
+
+Objects and arrays are passed by reference — mutations inside a called function
+are visible to the caller:
+
+```js
+function dfs(graph, root, entry, exit, t) {  // t = { value: 0 }
+  t.value += 1;           // mutates the shared object
+  entry[root] = t.value;
+
+  dfs(graph, neighbor, entry, exit, t);  // same object, changes propagate back
+
+  exit[root] = t.value;  // reflects all increments from the recursive call
+  t.value += 1;
+}
+```
+
+Wrapping `time` in an object (`{ value: 0 }`) makes it shared across all
+frames — increments anywhere in the recursion are immediately visible everywhere.
+
+### Other resolutions
+
+**Module-level variable (simplest)**
+```js
+let time = 0;  // shared across all calls without passing it at all
+function dfs(graph, root, entry, exit) { ... }
+```
+
+**Return updated time and thread it through**
+```js
+function dfs(..., time) {
+  ...
+  time = dfs(graph, neighbor, entry, exit, time);  // use returned value
+  ...
+  return time;
+}
+```
+More verbose but keeps the function pure (no shared mutable state).
+
+### Resources
+- MDN — Primitive values (pass by value): https://developer.mozilla.org/en-US/docs/Glossary/Primitive
+- MDN — Pass by value vs. reference in JS: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Functions#passing_arguments
+- 33jsconcepts — Value Types and Reference Types: https://33jsconcepts.com/concepts/value-types-and-reference-types

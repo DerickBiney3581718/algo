@@ -107,6 +107,12 @@ export class Graph {
   setParent(vtx, parentIdx) {
     this.verticesParents[vtx] = parentIdx;
   }
+  getVertexDegrees(vtx) {
+    return this.degrees[vtx];
+  }
+  getParent(vtx) {
+    return this.verticesParents[vtx];
+  }
   _attachEdge(vtx, edge) {
     const xEdgeList = this.edgesList[vtx];
     const nextEdgeNode = new EdgeNode(edge);
@@ -149,7 +155,7 @@ export class Graph {
   }
 
   printGraph() {
-    console.log("printing lines");
+    // console.log("printing lines");
     const lines = [];
 
     this.edgesList.forEach((node, vtx) => {
@@ -159,7 +165,6 @@ export class Graph {
 
       //   todo: add early stopping
       while (currNode) {
-        console.log("c node", currNode);
         line += currNode.value + "->";
         if (!currNode.next) {
           line += "|";
@@ -168,11 +173,10 @@ export class Graph {
 
         currNode = currNode.next;
       }
-      console.log("---", line);
       lines.push(line);
     });
 
-    console.log(lines);
+    console.log(lines.join("\n"));
   }
 }
 
