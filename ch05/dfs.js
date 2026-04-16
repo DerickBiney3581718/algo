@@ -1,4 +1,6 @@
+import { Stack } from "../ch03/stack.js";
 import { Graph } from "./graph.js";
+//todo: a proper traversal algorithm needs to factor in disconnected components
 
 function dfs(
   graph,
@@ -8,6 +10,7 @@ function dfs(
   exit = {},
   time = 0,
   reachable = [],
+  stack = new Stack(),
 ) {
   if (root === undefined) return;
 
@@ -21,12 +24,15 @@ function dfs(
 
   for (let neighbor of neighbors) {
     const status = graph.getVertexStatus(neighbor);
-    if (status === "processed") continue; //already explored edge
+    if (status === "processed") {
+      // if(graph.isDirected) can either be cross or forward
+      continue; //already explored edge
+    }
     if (status === "discovered" || graph.isDirected) {
       // not processed yet. Pending child nodes
       //? for back and tree edge labelling,  parent[neighbor] !== root
       const parent = graph.getParent(neighbor);
-      if (parent !== root) reachable[neighbor] = root; // add_edge processing
+      if (parent !== root) reachable[neighbor] = root; // add_edge processing. for top sort break
     }
     if (status === "undiscovered") {
       graph.setParent(neighbor, root);
@@ -40,6 +46,7 @@ function dfs(
         exit,
         time,
         reachable,
+        stack,
       );
       if (dfsLoad && dfsLoad.hasOwnProperty("time") && dfsLoad.time)
         time = dfsLoad.time;
@@ -47,13 +54,14 @@ function dfs(
   }
 
   graph.updateVertexStatus(root, "processed");
+  stack.push(root);
   if (processLateFn) processLateFn(graph, root, reachable, entry); // late_vertex_processing
   console.log("I'm out: ", root, "@", time);
 
   exit[root] = time;
   time += 1;
 
-  return { exit, entry, time };
+  return { exit, entry, time, stack };
 }
 
 function findArticulationVertices(graph, vtx, reachable, entry) {
@@ -84,8 +92,27 @@ function findArticulationVertices(graph, vtx, reachable, entry) {
     reachable[parent] = vtxReachableAncestor;
 }
 
+/**
+ * 
+ * @param {*} graph 
+ * @param {*} vtx 
+ * @param {*} reachable 
+ * @param {*} entry 
+ * 
+ * topsort(graph *g)
+{
+int i;
+init_stack(&sorted);
+for (i=1; i<=g->nvertices; i++)
+if (discovered[i] == FALSE)
+dfs(g,i);
+print_stack(&sorted); 
+ */
+function topSort(graph, vtx, reachable, entry) {}
+
 const graph1 = new Graph();
 graph1.initGraph();
 graph1.printGraph();
 
 console.log(dfs(graph1, findArticulationVertices));
+// 1 - 3 - 6 - 8 - 9 - 7 - 5 - 2 - 4;

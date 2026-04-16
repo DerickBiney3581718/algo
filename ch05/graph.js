@@ -44,10 +44,7 @@ export class Graph {
   edgesList = Array.from({ length: this.MAX_V + 1 });
   degrees = Array.from({ length: this.MAX_V + 1 }).map((_) => 0);
   verticesStatusMap = Object.fromEntries(
-    Array.from({ length: this.MAX_V + 1 }).map((_, idx) => [
-      idx,
-      "undiscovered",
-    ]),
+    Array.from({ length: this.MAX_V + 1 }).map((_, idx) => [idx, undefined]),
   );
   verticesParents = Array.from({ length: this.MAX_V + 1 });
 
@@ -65,7 +62,7 @@ export class Graph {
       this.nEdges = N_EDGES;
       const edges = SEEDED_EDGES;
       edges.forEach(([vtx, edge]) =>
-        this._insertEdges(vtx, edge, this.isDirected),
+        this.insertEdges(vtx, edge, this.isDirected),
       );
       return;
     }
@@ -89,7 +86,7 @@ export class Graph {
         );
         const [x, y] = x_y.split(",").map((val) => val.trim());
         if (!x || !y) return;
-        this._insertEdges(x, y, this.isDirected);
+        this.insertEdges(x, y, this.isDirected);
       }
     } catch (error) {
       endStream = false;
@@ -97,7 +94,16 @@ export class Graph {
 
     rl.close();
 
-    //? this._insertEdges(); //? Event emitters // not needing await means they don't use promises and maybe don't even involve the queue
+    //? this.insertEdges(); //? Event emitters // not needing await means they don't use promises and maybe don't even involve the queue
+  }
+
+  checkIsAncestor(vtx, ancestor) {
+    let vtxParent = this.getParent(vtx);
+    while (vtxParent !== undefined) {
+      if (vtxParent === ancestor) return true;
+      else vtxParent = this.getParent(vtxParent);
+    }
+    return false;
   }
 
   get root() {
@@ -126,16 +132,28 @@ export class Graph {
     this.degrees[vtx] += 1;
   }
 
-  _insertEdges(vtx, edge, isDirected) {
+  insertEdges(vtx, edge, isDirected) {
+    this.updateVertexStatus(vtx, "undiscovered");
     this._attachEdge(vtx, edge);
 
     if (!isDirected) {
-      this._insertEdges(edge, vtx, true);
+      this.insertEdges(edge, vtx, true);
     } else this.nEdges += 1;
   }
 
   updateVertexStatus(vtx, status) {
     this.verticesStatusMap[vtx] = status;
+  }
+
+  getVertexDepth(vtx) {
+    let depth = 0;
+    let vtxParent = this.getParent(vtx);
+
+    while (vtxParent !== undefined) {
+      depth++;
+      vtxParent = this.getParent(vtxParent);
+    }
+    return depth;
   }
 
   getVertexStatus(vtx) {
