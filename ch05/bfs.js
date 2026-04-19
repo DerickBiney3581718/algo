@@ -32,7 +32,7 @@ function bfs(graph, root, process_vertex_early, process_edge) {
 
     graph.updateVertexStatus(currNode, "discovered");
     if (process_vertex_early) process_vertex_early(currNode);
-    const currNodeNeighbors = graph.getAdjacencyList(currNode);
+    const currNodeNeighbors = graph.getAdjacencyListValues(currNode);
 
     for (let neighbor of currNodeNeighbors) {
       const status = graph.getVertexStatus(neighbor);
@@ -69,7 +69,7 @@ function countConnectedComponents(graph) {
   for (let idx = 0; idx < graph.edgesList.length; idx++) {
     const status = graph.getVertexStatus(idx);
     if (status === "undiscovered") {
-      const adjacencyList = graph.getAdjacencyList(idx);
+      const adjacencyList = graph.getAdjacencyListValues(idx);
 
       if (adjacencyList) {
         console.log("idx :", idx, "with list: ", adjacencyList);

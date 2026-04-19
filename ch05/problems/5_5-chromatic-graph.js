@@ -43,7 +43,7 @@ function dfs(graph, root = 1, entry = {}, exit = {}, time = 0, options = {}) {
     }
   }
 
-  const neighbors = graph.getAdjacencyList(root);
+  const neighbors = graph.getAdjacencyListValues(root);
 
   if (Array.isArray(neighbors)) {
     for (let neighbor of neighbors) {

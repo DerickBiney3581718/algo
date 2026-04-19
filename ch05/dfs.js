@@ -19,7 +19,7 @@ function dfs(
   entry[root] = time;
   console.log("I'm in: ", root, "@", time); //early_vertex_processing next
 
-  const neighbors = graph.getAdjacencyList(root);
+  const neighbors = graph.getAdjacencyListValues(root);
   if (!neighbors?.length) return;
 
   for (let neighbor of neighbors) {

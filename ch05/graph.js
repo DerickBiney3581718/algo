@@ -3,36 +3,36 @@ import * as readline from "node:readline/promises";
 
 const SEEDED_EDGES = Math.round(Math.random())
   ? [
-      [1, 2],
-      [1, 3],
-      [2, 4],
-      [2, 5],
-      [3, 5],
-      [3, 6],
-      [4, 7],
-      [5, 7],
-      [5, 8],
-      [6, 8],
-      [7, 9],
-      [8, 9],
+      [1, 2, 4],
+      [1, 3, 7],
+      [2, 4, 3],
+      [2, 5, 6],
+      [3, 5, 2],
+      [3, 6, 5],
+      [4, 7, 8],
+      [5, 7, 1],
+      [5, 8, 9],
+      [6, 8, 4],
+      [7, 9, 6],
+      [8, 9, 3],
     ]
   : [
-      [1, 2],
-      [1, 3],
-      [2, 3],
-      [4, 5],
-      [4, 6],
-      [5, 6],
-      [7, 8],
-      [8, 9],
-      [7, 9],
+      [1, 2, 5],
+      [1, 3, 2],
+      [2, 3, 8],
+      [4, 5, 3],
+      [4, 6, 7],
+      [5, 6, 1],
+      [7, 8, 4],
+      [8, 9, 6],
+      [7, 9, 9],
     ];
 
 const N_EDGES = 12;
 const N_VERTICES = 9;
 
 class EdgeNode {
-  constructor(value, next, weight) {
+  constructor(value, weight, next) {
     this.value = value;
     this.next = next;
     this.weight = weight;
@@ -61,8 +61,8 @@ export class Graph {
       this.nVertices = N_VERTICES;
       this.nEdges = N_EDGES;
       const edges = SEEDED_EDGES;
-      edges.forEach(([vtx, edge]) =>
-        this.insertEdges(vtx, edge, this.isDirected),
+      edges.forEach(([vtx, edge, weight]) =>
+        this.insertEdges(vtx, edge, weight, this.isDirected),
       );
       return;
     }
@@ -119,9 +119,9 @@ export class Graph {
   getParent(vtx) {
     return this.verticesParents[vtx];
   }
-  _attachEdge(vtx, edge) {
+  _attachEdge(vtx, edge, weight) {
     const xEdgeList = this.edgesList[vtx];
-    const nextEdgeNode = new EdgeNode(edge);
+    const nextEdgeNode = new EdgeNode(edge, weight);
 
     if (!xEdgeList) {
       this.edgesList[vtx] = nextEdgeNode;
@@ -132,12 +132,12 @@ export class Graph {
     this.degrees[vtx] += 1;
   }
 
-  insertEdges(vtx, edge, isDirected) {
+  insertEdges(vtx, edge, weight, isDirected) {
     this.updateVertexStatus(vtx, "undiscovered");
-    this._attachEdge(vtx, edge);
+    this._attachEdge(vtx, edge, weight);
 
     if (!isDirected) {
-      this.insertEdges(edge, vtx, true);
+      this.insertEdges(edge, vtx, weight, true);
     } else this.nEdges += 1;
   }
 
@@ -160,13 +160,28 @@ export class Graph {
     return this.verticesStatusMap[vtx];
   }
 
-  getAdjacencyList(vtx) {
+  get vertices() {
+    return this.edgesList.filter((val) => val).map((val, idx) => idx);
+  }
+  getAdjacencyListValues(vtx) {
     let currEdge = this.edgesList[vtx];
     if (!currEdge) return null;
 
     const adjacencyList = [];
     while (currEdge) {
       adjacencyList.push(currEdge.value);
+      currEdge = currEdge.next;
+    }
+    return adjacencyList;
+  }
+
+  getAdjacencyListEdges(vtx) {
+    let currEdge = this.edgesList[vtx];
+    if (!currEdge) return null;
+
+    const adjacencyList = [];
+    while (currEdge) {
+      adjacencyList.push(currEdge);
       currEdge = currEdge.next;
     }
     return adjacencyList;
