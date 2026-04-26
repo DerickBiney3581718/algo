@@ -511,3 +511,48 @@ More verbose but keeps the function pure (no shared mutable state).
 - MDN — Primitive values (pass by value): https://developer.mozilla.org/en-US/docs/Glossary/Primitive
 - MDN — Pass by value vs. reference in JS: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Functions#passing_arguments
 - 33jsconcepts — Value Types and Reference Types: https://33jsconcepts.com/concepts/value-types-and-reference-types
+
+---
+
+## `forEach` value used as index — silently extends array length
+
+### What happened
+`updateAllRowValues` iterated a row of `matrixDegrees` and used the **element value** as the write index:
+
+```js
+this.matrixDegrees[row].forEach(
+  (item) => (this.matrixDegrees[row][item] = currentDegree),
+);
+```
+
+Each element was initialized to `cols` (9). So the callback wrote to
+`this.matrixDegrees[row][9]` — one past the last valid index — on every call.
+Because JS arrays are dynamic, this silently appended a 10th element, making
+`matrixDegrees[row].length === 10`.
+
+Downstream, `getNextSquare` iterated `colIdx < this.matrixDegrees[rowIdx].length`
+and reached `colIdx = 9`. That value was then passed through to `getSliceFromId`
+(via `Math.floor(9 / SUB_MATRIX) = 3`), which only handles ids 0–2 and threw:
+
+```
+Error: Invalid row or column id:3
+```
+
+### Root cause
+`forEach(item => ...)` — `item` is the **value**, not the index. The intended
+fix is to use the second callback parameter for the index:
+
+```js
+this.matrixDegrees[row].forEach(
+  (_, idx) => (this.matrixDegrees[row][idx] = currentDegree),
+);
+```
+
+### Why JS doesn't catch this
+- Arrays are objects; assigning to `arr[9]` when `arr.length === 9` simply sets
+  a new property and bumps `length` — no error, no warning.
+- The corruption happened far from the crash site, making it hard to trace.
+
+### Resources
+- MDN — `Array.prototype.forEach` callback signature `(value, index, array)`: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach
+- MDN — Array dynamic length / sparse arrays: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/length
