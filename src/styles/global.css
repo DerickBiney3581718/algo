@@ -1,0 +1,63 @@
+/* Typography Sizing & Layout */
+@font-face {
+  font-family: "Caesar Dressing";
+  src: url("../assets/fonts/CaesarDressing-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+:root {
+  color-scheme: dark;
+
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "Fira Code", "Courier New", monospace;
+  --font-logo: "Caesar Dressing", cursive;
+  --radius-md: 8px;
+
+  --font-size-base: clamp(1rem, 0.95rem + 0.25vw, 1.25rem);
+  --font-size-title: clamp(1.5rem, 1.3rem + 1vw, 2.5rem);
+  --font-size-logo: 50px;
+  /* src/styles/global.css */
+
+  /* THE PALETTE: Classic Dark Backgrounds */
+  --color-bg-base: #0f1115; /* Very deep charcoal - perfect for the main window background */
+  --color-bg-surface: #181b22; /* Lighter gray-blue - ideal for control panels, cards, and sidebar containers */
+  --color-bg-elevated: #222731; /* Step higher - great for code highlights or hovering over interface items */
+
+  /* THE PALETTE: Classic Gray Text Hierarchy */
+  --color-text-primary: #e7e9ea; /* Bright off-white gray: Main headers, current active step execution text */
+  --color-text-secondary: #9aa5b5; /* Medium neutral gray: Subtitles, standard descriptions, layout labels */
+  --color-text-muted: #57606a; /* Deep muted gray: Unexecuted code lines, comment blocks, disabled buttons */
+
+  /* UI Feedback / Accents (Perfect for algorithm visualizations) */
+  --color-accent-blue: #38bdf8; /* Highlighting active array indices or normal graph edges */
+  --color-accent-orange: #ff9e3b; /* Pointer indicators or swap operations in progress */
+  --color-accent-green: #4ade80; /* "Sorted" states or verified path conclusions */
+}
+
+/* Base Reset Applied Globally */
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*global classes*/
+.logo-text {
+  font-family: var(--font-logo);
+  font-size: var(--font-size-logo);
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.logo {
+  margin: 20px;
+  height: 50px;
+  width: 200px;
+  display: flex;
+}

@@ -67,7 +67,171 @@ This separates:
 
 This is the most scalable approach.
 
+### Architecture clarifications (read this first)
+
+The stack diagram names **roles**, not always separate classes. One module can own more than one role early on; split them when rewind, scrubbing, or multiple renderers force it.
+
+#### What each layer actually does
+
+| Layer | Role | What it is *not* |
+| --- | --- | --- |
+| **Algorithms** | Domain logic only: given input, describe *what happened* as data (`VisualOperation[]` or a generator). | Does not touch DOM, canvas, or playback clock. |
+| **Operation generator** | Engine boundary: run the algorithm once, normalize ops, assign step indices, optionally attach explanations. | Not a second algorithm; it is *how* the engine collects the stream (see below). |
+| **Timeline / event store** | Append-only recording of ops + periodic **state snapshots** (checkpoints). Single source of truth for step index, rewind, code highlight, stats. | Not the timeline *UI* widget; the UI scrubber *reads* this store. |
+| **Playback controller** | Clock + transport: play, pause, step, seek, speed. Emits “current step = N” (and maybe “op at N”). | Does not render and does not implement swap/compare logic. |
+| **State reducer** | Pure function: `(state, operation) → state`. Folds one op into the canonical visualization model. | Not the renderer; does not draw pixels. |
+| **Renderer** | `(state) → DOM/SVG/canvas`. Idempotent view of current state. | Does not run algorithms or decide step N. |
+| **UI** | Chrome: toolbar, scrubber, code panel, input forms. Subscribes to playback + state. | Should not mutate visualization state except via “run algorithm” / “edit input”. |
+
+#### Why “operation generator” if algorithms already emit operations?
+
+Algorithms **produce** operations; the **generator** is the **recording phase** of the engine:
+
+1. **Separation of concerns** — `bubbleSort.generate(input)` stays testable and free of timeline/checkpoint policy.
+2. **One place for cross-cutting work** — step IDs, complexity counters, human-readable explanations, validation, compression.
+3. **Two execution modes** — same interface whether the algorithm returns a full array upfront or yields ops lazily (generator/async iterator for huge traces).
+
+```mermaid
+flowchart LR
+  subgraph record ["Record phase (once per run)"]
+    A[Algorithm] --> B[Operation generator]
+    B --> C[(Timeline / event store)]
+  end
+
+  subgraph play ["Playback phase (many times)"]
+    C --> D[Playback controller]
+    D --> E[State reducer]
+    E --> F[Renderer]
+    F --> G[UI]
+  end
+```
+
+You do **not** need two different “algorithm” systems. Think: **algorithm = author**, **generator = publisher**, **store = archive**.
+
+#### Operations vs commands vs renderer
+
+- **Visual operations** — serializable **data** (`{ type: "swap", a: 0, b: 1 }`). What gets stored in the timeline.
+- **Commands** (optional) — **behavior** with `execute` / `undo` on state. Useful when inverse ops are hard; can be created **from** operations in a small factory when playback starts.
+- **Reducer** — the default path: apply one **operation** to **state** with pure rules (no Command class required for MVP).
+
+```mermaid
+flowchart TB
+  OP["VisualOperation (data)"]
+  CMD["Command execute/undo (optional)"]
+  ST["AppState (arrays, graph, highlights)"]
+  REN["Renderer.render(state)"]
+
+  OP -->|"reducer: state + op → state"| ST
+  OP -.->|"factory (optional)"| CMD
+  CMD -.->|"execute / undo"| ST
+  ST --> REN
+```
+
+**Commands do not talk to the renderer directly.** Neither do raw operations. Flow is always:
+
+`operation → reducer → state → renderer`.
+
+The playback controller only advances the step pointer (and triggers reducer + render); it does not map ops to draw calls.
+
+#### What is the timeline / event store?
+
+The **canonical list of steps** the product can rewind through — plus checkpoints for fast seek:
+
+```mermaid
+sequenceDiagram
+  participant User
+  participant UI as Timeline UI scrubber
+  participant PC as Playback controller
+  participant Store as Event store
+  participant Red as State reducer
+  participant Ren as Renderer
+
+  Note over Store: [{op},{op},..., snapshot@50, ...]
+
+  User->>UI: scrub to step 47
+  UI->>PC: seek(47)
+  PC->>Store: load checkpoint ≤ 47 + ops 48..47
+  PC->>Red: fold ops → state@47
+  Red->>Ren: render(state@47)
+  Ren-->>User: frame + synced code line
+```
+
+Store contents (conceptual):
+
+```ts
+{
+  operations: VisualOperation[],   // or interleaved with snapshots
+  checkpoints: { step: number, state: AppState }[],
+  metadata: { algorithmId, input, explanations? }
+}
+```
+
+Rewind = **replay ops from nearest checkpoint** (or undo commands), not “remember previous frames” in the renderer.
+
+#### What does the state reducer do?
+
+It is the **only** place that turns “what the algorithm said” into “what the picture should show”:
+
+```mermaid
+stateDiagram-v2
+  [*] --> S0: initialState(input)
+  S0 --> S1: reduce(S0, op₀)
+  S1 --> S2: reduce(S1, op₁)
+  S2 --> S3: reduce(S2, op₂)
+  note right of S2: Renderer always reads Sn,\nnever reads ops directly
+```
+
+Example responsibilities:
+
+- `swap` → update array values in `AppState`
+- `highlight` → set `highlightedIndices`
+- `visit` (graph) → mark node visited, push to traversal order
+- Does **not** animate, layout SVG, or handle keyboard — that stays in renderer/UI
+
+For **seek** to step N: `state = fold(initial, ops[0..N])` starting from latest checkpoint ≤ N.
+
+#### End-to-end data flow
+
+```mermaid
+flowchart TB
+  subgraph input
+    U[User input]
+  end
+
+  subgraph core
+    U --> AR[AlgorithmRunner]
+    AR --> GEN[Operation generator]
+    GEN --> STORE[(Timeline store)]
+  end
+
+  subgraph transport
+    STORE --> PC[Playback controller]
+    PC -->|step index| RED[State reducer]
+    RED --> STATE[AppState]
+  end
+
+  subgraph view
+    STATE --> REN[Renderer]
+    REN --> DOM[SVG / Canvas]
+    PC --> PANELS[Code / Stats / Explanation]
+    STORE --> PANELS
+  end
+```
+
+#### Observer pattern (UI only)
+
+Playback and store updates can **notify** panels; render path stays reducer → renderer:
+
+```mermaid
+flowchart LR
+  PC[Playback controller] -->|step changed| CODE[Code panel]
+  PC -->|step changed| STATS[Stats panel]
+  PC --> RED[Reducer] --> REN[Renderer]
+  STORE[(Event store)] -->|op at step| CODE
+```
+
 ---
+
 
 # 2. Recommended Tech Stack
 

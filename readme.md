@@ -1,0 +1,2 @@
+- clone repo
+- run `npm i`
