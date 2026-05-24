@@ -1,0 +1,19 @@
+.algoCard {
+  height: 50px;
+  width: 100px;
+  border-radius: 15px;
+  border: 2px solid var(--color-bg-elevated);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: var(--font-logo);
+  flex-wrap: wrap;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  margin: 1rem;
+}
+
+.algoCard:hover {
+  color: var(--color-text-primary);
+  cursor: pointer;
+}

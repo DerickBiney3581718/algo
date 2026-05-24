@@ -1,0 +1,41 @@
+.menuIcon {
+  width: 40px;
+  height: 40px;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.closeMenu,
+.closeNote {
+  width: var(--collapsed-menu-width);
+  /* transition: all 1s ease-out; */
+  &:hover {
+    background-color: var(--color-bg-elevated);
+  }
+}
+
+.openMenu,
+.openNote {
+  width: 100%;
+  /* transition: all 1s ease-in; */
+
+  &:hover {
+    background-color: inherit;
+  }
+
+  & svg {
+    display: none;
+  }
+}
+
+/* notes */
+.noteIcon {
+  width: 40px;
+  height: 40px;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.reverse {
+  rotate: 180deg;
+}
