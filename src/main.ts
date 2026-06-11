@@ -14,7 +14,6 @@ const navBar = document.querySelector<HTMLDivElement>("#nav")!;
 navBar.innerHTML = renderLogo();
 
 const pathname = window.location.pathname.replaceAll("/", "");
-console.log(pathname);
 
 switch (pathname) {
   case "":

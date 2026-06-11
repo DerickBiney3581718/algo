@@ -1,7 +1,6 @@
 .arraySlot {
   border-right: 2px solid var(--color-text-muted);
   height: 100%;
-  width: 2rem;
   position: relative;
   text-align: center;
   &:hover {

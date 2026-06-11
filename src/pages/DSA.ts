@@ -1,12 +1,12 @@
-import type { DSA_TYPE } from "../types/dsa";
-import { renderArray } from "../components/arrays/Array";
 import { renderMenu } from "../components/commons/Menu";
 import CommonModuleCss from "../components/commons/common.module.css";
 import { renderNote } from "../components/commons/Note";
 import { renderPlayback } from "../components/commons/Playback";
+import { DSA_TYPES, type DSA_TYPE } from "../types/dsa";
+import { renderArray } from "../components/arrays/Array";
+import { watch } from "../common/store";
 
-const ARRAY = ["1", "2", "3", "4", "5"];
-export const renderDSAPage = (appMain: Element, slug: DSA_TYPE) => {
+export const renderDSAPage = (appMain: Element, pathname: DSA_TYPE) => {
   appMain.innerHTML = /*html*/ `
   <div id="container">
     <!-- menu -->
@@ -26,7 +26,7 @@ export const renderDSAPage = (appMain: Element, slug: DSA_TYPE) => {
   // render menu
   const menuNode = appMain.querySelector<HTMLDivElement>("#menu")!;
   menuNode.classList.add(CommonModuleCss.closeMenu);
-  renderMenu(menuNode, slug);
+  renderMenu(menuNode);
 
   menuNode.addEventListener("click", () => {
     menuNode.classList.toggle(CommonModuleCss.openMenu);
@@ -47,6 +47,10 @@ export const renderDSAPage = (appMain: Element, slug: DSA_TYPE) => {
 
   // canvas
   const canvasNode = appMain.querySelector("#canvas")!;
-  const arrayVi = renderArray(ARRAY);
-  canvasNode.prepend(arrayVi);
+  const ds = router[pathname](canvasNode);
+  watch(ds);
+};
+
+export const router: Record<DSA_TYPE, Function> = {
+  [DSA_TYPES.ARRAYS]: renderArray,
 };
