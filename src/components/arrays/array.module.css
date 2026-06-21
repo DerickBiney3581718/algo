@@ -1,5 +1,7 @@
 .arraySlot {
   border-right: 2px solid var(--color-text-muted);
+  border-left: 2px solid var(--color-text-muted);
+
   height: 100%;
   position: relative;
   text-align: center;
@@ -7,6 +9,15 @@
     background-color: var(--color-accent-green);
     cursor: pointer;
   }
+}
+
+.highlightSlot {
+  background-color: var(--color-accent-orange);
+}
+
+.unHighlightSlot {
+  transition: all 1s ease-in;
+  background-color: inherit;
 }
 
 .slotIdx {
@@ -19,9 +30,8 @@
 
 .arrayVi {
   height: 2rem;
-  border-left: 2px solid var(--color-text-muted);
-  border-top: 2px solid var(--color-text-muted);
-  border-bottom: 2px solid var(--color-text-muted);
+  border: 2px solid var(--color-text-muted);
   color: var(--color-text-primary);
   display: flex;
+  position: relative;
 }

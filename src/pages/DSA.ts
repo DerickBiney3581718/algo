@@ -3,8 +3,8 @@ import CommonModuleCss from "../components/commons/common.module.css";
 import { renderNote } from "../components/commons/Note";
 import { renderPlayback } from "../components/commons/Playback";
 import { DSA_TYPES, type DSA_TYPE } from "../types/dsa";
-import { renderArray } from "../components/arrays/Array";
-import { watch } from "../common/store";
+import { renderArray } from "../components/arrays/array.renderer";
+import { watch, state } from "../common/store";
 
 export const renderDSAPage = (appMain: Element, pathname: DSA_TYPE) => {
   appMain.innerHTML = /*html*/ `
@@ -47,8 +47,11 @@ export const renderDSAPage = (appMain: Element, pathname: DSA_TYPE) => {
 
   // canvas
   const canvasNode = appMain.querySelector("#canvas")!;
-  const ds = router[pathname](canvasNode);
-  watch(ds);
+  const { ds, reducer } = router[pathname](canvasNode);
+  watch(ds, reducer);
+  ds.search(45);
+  ds.update(4, 4);
+  console.log("state...", state);
 };
 
 export const router: Record<DSA_TYPE, Function> = {
