@@ -1,4 +1,4 @@
-import { createTArray } from "../../data-structures/Array";
+import { createTArray } from "../../data-structures/arrays/Array";
 import ArrayModuleCss from "./array.module.css";
 import { createReducer } from "./array.reducer";
 import { SLOT_WIDTH } from "./array.helpers";

@@ -1,5 +1,5 @@
-import { VISUAL_OPS_TYPES } from "../types/dsa";
-import { Base } from "./Base";
+import { VISUAL_OPS_TYPES } from "../../types/dsa";
+import { Base } from "../Base";
 
 export interface TArray<T extends number | string> {
   [idx: number]: T;
