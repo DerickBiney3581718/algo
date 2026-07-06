@@ -6,7 +6,7 @@ export interface TArray<T extends number | string> {
 }
 
 export class TArray<T extends number | string> extends Base {
-  arr: T[];
+  arr: (T | null)[];
   private validLen: number = 0;
   private isSorted: boolean;
   private nextCounter: number = 0;
@@ -20,9 +20,12 @@ export class TArray<T extends number | string> extends Base {
     initArr: Iterable<T>,
     isSorted: boolean = false,
     isResizable: boolean = false,
+    length: number = 100,
   ) {
     super();
-    this.arr = Array.from(initArr);
+
+    if (isNonEmptyIterable(initArr)) this.arr = Array.from(initArr);
+    else this.arr = Array.from({ length });
     this.isSorted = isSorted;
     this.isResizable = isResizable;
     this.updateValidLen();
@@ -41,6 +44,14 @@ export class TArray<T extends number | string> extends Base {
   }
   get showArr() {
     return this.arr;
+  }
+
+  getValidLen() {
+    return this.validLen;
+  }
+
+  get isEmpty() {
+    return this.validLen === 0;
   }
 
   delete(idx: number) {
@@ -79,7 +90,7 @@ export class TArray<T extends number | string> extends Base {
     return foundIdx;
   }
 
-  insert(val: T, idx?: number) {
+  insert(val: T | null, idx?: number) {
     const currentLen = this.length;
     if (currentLen === this.validLen) {
       if (!this.isResizable)
@@ -119,10 +130,10 @@ export class TArray<T extends number | string> extends Base {
     });
   }
   private updateValidLen(): void {
-    this.validLen = this.arr.filter((val) => val != null).length;
+    this.validLen = this.arr.findLastIndex((value) => value != null) + 1;
   }
 
-  private insertAndSwap(val: T, targetIdx?: number) {
+  private insertAndSwap(val: T | null, targetIdx?: number) {
     const initIdx = this.validLen;
     console.log("initidx:", initIdx, "val: ", val, "targetIdx: ", targetIdx);
 
@@ -140,14 +151,21 @@ export class TArray<T extends number | string> extends Base {
         if (idx === targetIdx) break;
         this._swap(leftIdx, idx);
       } else {
-        if (this.arr[leftIdx] > this.arr[idx]) this._swap(leftIdx, idx);
+        const leftVal = this.arr[leftIdx];
+        const rightVal = this.arr[idx];
+        if (
+          (leftVal && rightVal && leftVal > rightVal) ||
+          leftVal == null ||
+          rightVal == null
+        )
+          this._swap(leftIdx, idx);
         else break;
       }
     }
     this.updateValidLen();
   }
 
-  private recordDelete(idx: number, state: T[]) {
+  private recordDelete(idx: number, state: (T | null)[]) {
     this.record({ op: VISUAL_OPS_TYPES.DEL, indices: [idx] });
     this.arr.slice(idx, this.validLen).forEach((_, newIdx) =>
       this.record({
