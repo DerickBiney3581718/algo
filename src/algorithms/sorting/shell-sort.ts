@@ -7,7 +7,7 @@
 * 
  */
 export type subscriptable<T> = { [idx: number]: T };
-export function swap<T extends string | number>(
+export function swap<T extends string | number | null>(
   list: subscriptable<T>, //any subscriptable
   left: number,
   right: number,

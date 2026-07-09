@@ -3,16 +3,19 @@
  * naive implementation using an array
  */
 
-import { swap, type subscriptable } from "../../algorithms/sorting/shell-sort";
 import { TArray } from "../arrays/Array";
 import { Base } from "../Base";
 
-export class PriorityQueue<T extends string | number> extends Base {
+export class PriorityQueue<T extends string | number | null> extends Base {
   array: TArray<T>;
-  constructor(max?: number) {
+  isMin: boolean = false;
+
+  constructor(max?: number, isMin: boolean = false) {
     super();
     if (max) this.array = new TArray([], false, false, max);
     else this.array = new TArray([], false, true, 1);
+    this.array.insert(null);
+    this.isMin = isMin;
   }
 
   delMax(): T {
@@ -22,23 +25,30 @@ export class PriorityQueue<T extends string | number> extends Base {
   }
 
   _delete(idx: number): void {
-    const lastIdx = this.array.getValidLen() - 1;
-    this.swap(this.array, idx, lastIdx);
+    const lastIdx = this.array.validLen - 1;
+
+    this.swap(idx, lastIdx);
+
+    this.deleteSideEffects(lastIdx);
     this.array.delete(lastIdx);
+
     this._bubbleDown(idx);
   }
+
+  deleteSideEffects(deletedIdx: number) {}
+  insertSideEffects(insertedIdx: number, value: T, metadata?: T) {}
 
   insertBulk(entries: TArray<T>) {
     for (const value of entries) {
       if (value) this.insert(value);
     }
   }
-  insert(value: T) {
-    if (this.isEmpty) this.array.insert(value, 1);
-    else this.array.insert(value);
 
-    let currentIdx = this.array.getValidLen();
-    this._bubbleUp(currentIdx);
+  insert(value: T, metadata?: T): number {
+    this.array.insert(value);
+    let currentIdx = this.array.validLen - 1;
+    this.insertSideEffects(currentIdx, value, metadata);
+    return this._bubbleUp(currentIdx);
   }
 
   /**
@@ -46,21 +56,22 @@ export class PriorityQueue<T extends string | number> extends Base {
    * @param childIdx
    * @returns
    */
-  _bubbleUp(childIdx: number): void {
-    if (!childIdx) return;
+  _bubbleUp(childIdx: number): number {
     const parentIdx = this.getParentIdx(childIdx);
+    if (!parentIdx) return childIdx;
 
     if (this._isLess(parentIdx, childIdx)) {
-      this.swap(this.array, parentIdx, childIdx);
+      this.swap(parentIdx, childIdx);
       return this._bubbleUp(parentIdx);
     }
+    return childIdx;
   }
 
   /**
    * swap
    */
-  swap(list: subscriptable<T>, left: number, right: number): void {
-    return swap(list, left, right);
+  swap(left: number, right: number): void {
+    this.array._swap(left, right);
   }
 
   /**
@@ -73,16 +84,24 @@ export class PriorityQueue<T extends string | number> extends Base {
     const leftChildIdx = this.getLeftChildIdx(parentIdx);
     const rightChildIdx = this.getRightChildIdx(parentIdx);
 
-    for (let index = leftChildIdx; index <= rightChildIdx; index++) {
-      if (this._isLess(parentIdx, index) && this.array[index]) {
-        this.swap(this.array, index, parentIdx);
-        return this._bubbleDown(index);
+    for (let childIdx = leftChildIdx; childIdx <= rightChildIdx; childIdx++) {
+      const childValue = this.array[childIdx];
+      if (childValue == null) continue;
+
+      if (this._isLess(parentIdx, childIdx)) {
+        this.swap(parentIdx, childIdx);
+        return this._bubbleDown(childIdx);
       }
     }
   }
 
-  private _isLess(left: number, right: number): boolean {
-    return this.array[left] < this.array[right];
+  _isLess(left: number, right: number): boolean {
+    const rightVal = this.array[right];
+    const leftVal = this.array[left];
+    if (rightVal == null) return false;
+    if (leftVal == null) return true;
+
+    return this.isMin ? leftVal > rightVal : leftVal < rightVal;
   }
 
   getParentIdx(idx: number): number {
@@ -104,4 +123,20 @@ export class PriorityQueue<T extends string | number> extends Base {
   get size(): number {
     return this.array.length;
   }
+
+  toString() {
+    return this.array.toString();
+  }
 }
+
+// const pq = new PriorityQueue<number>(20);
+// const entries = new TArray<number>([1, 16, 9, 32, 78, 8, 4]);
+// pq.insertBulk(entries);
+// console.log(`${pq}`);
+// console.log(pq.delMax());
+// console.log(pq.delMax());
+// console.log(pq.delMax());
+// console.log(pq.insert(1000));
+// console.log(pq.insert(89));
+
+// console.log(`${pq}`);

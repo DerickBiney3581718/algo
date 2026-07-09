@@ -1,13 +1,12 @@
 import { VISUAL_OPS_TYPES } from "../../types/dsa";
 import { Base } from "../Base";
 
-export interface TArray<T extends number | string> {
+export interface TArray<T extends number | string | null> {
   [idx: number]: T;
 }
 
-export class TArray<T extends number | string> extends Base {
+export class TArray<T extends number | string | null> extends Base {
   arr: (T | null)[];
-  private validLen: number = 0;
   private isSorted: boolean;
   private nextCounter: number = 0;
   private isResizable: boolean = false;
@@ -17,7 +16,7 @@ export class TArray<T extends number | string> extends Base {
     return this.arr.length;
   }
   constructor(
-    initArr: Iterable<T>,
+    initArr: Iterable<T | null>,
     isSorted: boolean = false,
     isResizable: boolean = false,
     length: number = 100,
@@ -28,7 +27,6 @@ export class TArray<T extends number | string> extends Base {
     else this.arr = Array.from({ length });
     this.isSorted = isSorted;
     this.isResizable = isResizable;
-    this.updateValidLen();
 
     const state = this.arr;
     this.record({ op: VISUAL_OPS_TYPES.STATE, args: { state } });
@@ -46,8 +44,8 @@ export class TArray<T extends number | string> extends Base {
     return this.arr;
   }
 
-  getValidLen() {
-    return this.validLen;
+  get validLen() {
+    return this.arr.findLastIndex((value) => value !== undefined) + 1;
   }
 
   get isEmpty() {
@@ -58,13 +56,12 @@ export class TArray<T extends number | string> extends Base {
     const newArr = this.arr.slice(0, idx).concat(this.arr.slice(idx + 1));
     newArr.length = this.length;
     this.arr = newArr;
-    this.updateValidLen();
 
     const state = this.arr;
     this.recordDelete(idx, state);
   }
 
-  update(idx: number, val: T) {
+  update(idx: number, val: T | null) {
     // add validation
     this.arr[idx] = val;
     this.record({ op: VISUAL_OPS_TYPES.UPT, args: { initIdx: idx, val } });
@@ -129,13 +126,9 @@ export class TArray<T extends number | string> extends Base {
       },
     });
   }
-  private updateValidLen(): void {
-    this.validLen = this.arr.findLastIndex((value) => value != null) + 1;
-  }
 
   private insertAndSwap(val: T | null, targetIdx?: number) {
     const initIdx = this.validLen;
-    console.log("initidx:", initIdx, "val: ", val, "targetIdx: ", targetIdx);
 
     this.arr[initIdx] = val;
     const state = this.arr;
@@ -147,10 +140,11 @@ export class TArray<T extends number | string> extends Base {
     for (let idx = initIdx; idx >= 0; idx--) {
       const leftIdx = idx - 1;
 
-      if (targetIdx) {
+      if (targetIdx !== undefined) {
         if (idx === targetIdx) break;
         this._swap(leftIdx, idx);
       } else {
+        // this is isSorted
         const leftVal = this.arr[leftIdx];
         const rightVal = this.arr[idx];
         if (
@@ -162,7 +156,6 @@ export class TArray<T extends number | string> extends Base {
         else break;
       }
     }
-    this.updateValidLen();
   }
 
   private recordDelete(idx: number, state: (T | null)[]) {
@@ -177,7 +170,7 @@ export class TArray<T extends number | string> extends Base {
     this.record({ op: VISUAL_OPS_TYPES.DONE, args: { state } });
   }
 
-  private _swap(left: number, right: number) {
+  _swap(left: number, right: number) {
     const buffer = this.arr[right];
 
     this.arr[right] = this.arr[left];
@@ -193,14 +186,19 @@ export class TArray<T extends number | string> extends Base {
     high: number = this.validLen - 1,
     low: number = 0,
   ): number {
+    if (searchVal === null) return -1;
+
     if (low > high) return -1;
     const mid = Math.ceil((high + low) / 2);
     this.record({
       op: VISUAL_OPS_TYPES.MOVE_PTRS,
       args: { low, high, mid },
     });
-    if (this.arr[mid] === searchVal) return mid;
-    else if (this.arr[mid] > searchVal) high = mid - 1;
+
+    const midValue = this.arr[mid];
+    if (midValue === null) return -1;
+    if (midValue === searchVal) return mid;
+    else if (midValue > searchVal) high = mid - 1;
     else low = mid + 1;
     return this.binarySearch(searchVal, high, low);
   }
@@ -261,9 +259,7 @@ export function createTArray<T extends string | number>(
     }
 
     if (isSorted) {
-      console.log("sorting: ", list);
       list.sort((a, b) => Number(a) - Number(b));
-      console.log("sorted: ", list);
     }
 
     return new TArray(list as Iterable<T>, isSorted, isResizable);
