@@ -3,11 +3,12 @@
  * example: Patient triage. Patients have unique ids that should be mapped to heap positions. naive implementation assuming ids are sequential 1...N - 1
  */
 
+import type { Comparable } from "../../types/dsa";
 import { TArray } from "../arrays/Array";
 import { PriorityQueue } from "./PriorityQueue";
 
 export class IndexedPriorityQueue<
-  T extends string | number,
+  T extends Comparable,
 > extends PriorityQueue<T> {
   keyHeapPos: TArray<number> = new TArray([]);
   keyValues: TArray<T> = new TArray([]);
@@ -18,12 +19,15 @@ export class IndexedPriorityQueue<
     this.keyValues = new TArray([], false, false, this.size);
   }
 
-  insertWithKey(value: T, keyValue: T): number {
+  insertWithKey(value: T, keyValue: T): number | null {
     const keyValueNum = Number(keyValue);
-    if (this.keyValues[keyValueNum] != null)
-      this.updateItem(keyValueNum, value);
-
     if (keyValueNum > this.size - 1) throw new Error("key value exceeds limit");
+
+    if (this.keyValues[keyValueNum] != null) {
+      this.updateItem(keyValueNum, value);
+      return null;
+    }
+
     const currIdx = this.insert(keyValue, value);
 
     return currIdx;
@@ -38,12 +42,12 @@ export class IndexedPriorityQueue<
     this.keyHeapPos.update(rightKey, right);
   }
 
-  delMax(): T {
+  delMax(): T | null {
     return this.deleteItem(undefined, 1);
   }
 
-  deleteItem(key?: number, idx?: number): T {
-    if (!key && !idx) throw new Error("idx or key must be valid");
+  deleteItem(key?: number, idx?: number): T | null {
+    if (key == null && idx == null) throw new Error("idx or key must be valid");
 
     const heapIdx = key ? this.keyHeapPos[key] : idx;
 
@@ -77,20 +81,13 @@ export class IndexedPriorityQueue<
     this._bubbleUp(idx);
   }
 
-  _isLess(left: number, right: number): boolean {
-    const leftKey = Number(this.array[left]);
-    const rightKey = Number(this.array[right]);
-
-    const isLeftLess = this.keyValues[leftKey] < this.keyValues[rightKey];
-
-    return this.isMin ? !isLeftLess : isLeftLess;
+  _valueOf(idx: number): T | null {
+    const key = Number(this.array[idx]);
+    return this.keyValues[key];
   }
 
   toString(): string {
-    const keyValues = this.keyValues;
-    const keyHeapPos = this.keyHeapPos;
-    const heapPosKey = this.array;
-    return JSON.stringify({ keyValues, keyHeapPos, heapPosKey });
+    return this.array.toString();
   }
 }
 

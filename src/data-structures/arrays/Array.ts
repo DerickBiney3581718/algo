@@ -1,11 +1,11 @@
-import { VISUAL_OPS_TYPES } from "../../types/dsa";
+import { VISUAL_OPS_TYPES, type Comparable } from "../../types/dsa";
 import { Base } from "../Base";
 
 export interface TArray<T extends number | string | null> {
-  [idx: number]: T;
+  [idx: number]: T | null;
 }
 
-export class TArray<T extends number | string | null> extends Base {
+export class TArray<T extends Comparable> extends Base {
   arr: (T | null)[];
   private isSorted: boolean;
   private nextCounter: number = 0;
@@ -40,9 +40,6 @@ export class TArray<T extends number | string | null> extends Base {
       },
     });
   }
-  get showArr() {
-    return this.arr;
-  }
 
   get validLen() {
     return this.arr.findLastIndex((value) => value !== undefined) + 1;
@@ -61,8 +58,9 @@ export class TArray<T extends number | string | null> extends Base {
     this.recordDelete(idx, state);
   }
 
-  update(idx: number, val: T | null) {
+  update(idx: number | null, val: T | null) {
     // add validation
+    if (idx == null) return;
     this.arr[idx] = val;
     this.record({ op: VISUAL_OPS_TYPES.UPT, args: { initIdx: idx, val } });
   }
@@ -139,6 +137,7 @@ export class TArray<T extends number | string | null> extends Base {
 
     for (let idx = initIdx; idx >= 0; idx--) {
       const leftIdx = idx - 1;
+      if (leftIdx == 0) continue;
 
       if (targetIdx !== undefined) {
         if (idx === targetIdx) break;
@@ -229,8 +228,13 @@ export class TArray<T extends number | string | null> extends Base {
     return { value, done: false };
   }
 
-  [Symbol.iterator]() {
-    return this;
+  /**
+   * All symbol.iter needs to return is an iterator obj and if it is a generator. fine
+   */
+  *[Symbol.iterator]() {
+    for (let idx = 0; idx < this.length; idx++) {
+      yield this.arr[idx];
+    }
   }
 
   toString() {

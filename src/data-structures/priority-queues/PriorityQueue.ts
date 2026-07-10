@@ -3,11 +3,12 @@
  * naive implementation using an array
  */
 
+import type { Comparable } from "../../types/dsa";
 import { TArray } from "../arrays/Array";
 import { Base } from "../Base";
 
-export class PriorityQueue<T extends string | number | null> extends Base {
-  array: TArray<T>;
+export class PriorityQueue<T extends Comparable> extends Base {
+  protected array: TArray<T>; // stays structurally, changes semantically in indexed pq, avoid external errors
   isMin: boolean = false;
 
   constructor(max?: number, isMin: boolean = false) {
@@ -18,7 +19,7 @@ export class PriorityQueue<T extends string | number | null> extends Base {
     this.isMin = isMin;
   }
 
-  delMax(): T {
+  delMax(): T | null {
     const max = this.array[1];
     this._delete(1);
     return max;
@@ -44,7 +45,7 @@ export class PriorityQueue<T extends string | number | null> extends Base {
     }
   }
 
-  insert(value: T, metadata?: T): number {
+  insert(value: T, metadata?: T): number | null {
     this.array.insert(value);
     let currentIdx = this.array.validLen - 1;
     this.insertSideEffects(currentIdx, value, metadata);
@@ -56,7 +57,8 @@ export class PriorityQueue<T extends string | number | null> extends Base {
    * @param childIdx
    * @returns
    */
-  _bubbleUp(childIdx: number): number {
+  _bubbleUp(childIdx: number | null): number | null {
+    if (childIdx == null) return null;
     const parentIdx = this.getParentIdx(childIdx);
     if (!parentIdx) return childIdx;
 
@@ -79,8 +81,8 @@ export class PriorityQueue<T extends string | number | null> extends Base {
    * @param idx
    * @returns
    */
-  _bubbleDown(parentIdx: number): void {
-    if (parentIdx >= this.size) return;
+  _bubbleDown(parentIdx: number | null): void {
+    if (parentIdx == null || parentIdx >= this.size) return;
     const leftChildIdx = this.getLeftChildIdx(parentIdx);
     const rightChildIdx = this.getRightChildIdx(parentIdx);
 
@@ -96,12 +98,16 @@ export class PriorityQueue<T extends string | number | null> extends Base {
   }
 
   _isLess(left: number, right: number): boolean {
-    const rightVal = this.array[right];
-    const leftVal = this.array[left];
+    const rightVal = this._valueOf(right);
+    const leftVal = this._valueOf(left);
     if (rightVal == null) return false;
     if (leftVal == null) return true;
 
     return this.isMin ? leftVal > rightVal : leftVal < rightVal;
+  }
+
+  _valueOf(idx: number): T | null {
+    return this.array[idx];
   }
 
   getParentIdx(idx: number): number {

@@ -24,3 +24,5 @@ export type VisualOp = {
   indices?: number[];
   args?: Record<string, any>;
 };
+
+export type Comparable = string | number | null;
