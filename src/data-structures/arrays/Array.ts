@@ -1,4 +1,8 @@
-import { VISUAL_OPS_TYPES, type Comparable } from "../../types/dsa";
+import {
+  VISUAL_OPS_TYPES,
+  type Comparable,
+  type NonNullComparable,
+} from "../../types/dsa";
 import { Base } from "../Base";
 
 export interface TArray<T extends number | string | null> {
@@ -135,9 +139,8 @@ export class TArray<T extends Comparable> extends Base {
       args: { state, val, initIdx },
     }); //START INSERTION
 
-    for (let idx = initIdx; idx >= 0; idx--) {
+    for (let idx = initIdx; idx > 0; idx--) {
       const leftIdx = idx - 1;
-      if (leftIdx == 0) continue;
 
       if (targetIdx !== undefined) {
         if (idx === targetIdx) break;
@@ -250,7 +253,7 @@ type createParams<T extends string | number> = {
   isResizable?: boolean;
 };
 
-export function createTArray<T extends string | number>(
+export function createTArray<T extends NonNullComparable>(
   params: createParams<T>,
 ): TArray<T> {
   const { length, fill = 0, isSorted, userList, isResizable } = params;

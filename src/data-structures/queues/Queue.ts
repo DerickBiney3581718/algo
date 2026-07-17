@@ -42,11 +42,8 @@ export class Queue<T> extends Base {
   peek(): T | null {
     return this.head?.value ?? null;
   }
+
+  toString() {
+    return this.tail;
+  }
 }
-
-const q = new Queue();
-q.enqueue("fun").enqueue("nyu");
-
-console.log("q: ", q.peek());
-q.dequeue();
-console.log("q: ", q.peek());

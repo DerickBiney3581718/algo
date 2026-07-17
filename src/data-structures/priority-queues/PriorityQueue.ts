@@ -36,8 +36,8 @@ export class PriorityQueue<T extends Comparable> extends Base {
     this._bubbleDown(idx);
   }
 
-  deleteSideEffects(deletedIdx: number) {}
-  insertSideEffects(insertedIdx: number, value: T, metadata?: T) {}
+  deleteSideEffects(_deletedIdx: number) {}
+  insertSideEffects(_insertedIdx: number, _value: T, _metadata?: T) {}
 
   insertBulk(entries: TArray<T>) {
     for (const value of entries) {

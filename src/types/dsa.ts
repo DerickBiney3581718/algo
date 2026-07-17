@@ -26,3 +26,5 @@ export type VisualOp = {
 };
 
 export type Comparable = string | number | null;
+
+export type NonNullComparable = string | number;
