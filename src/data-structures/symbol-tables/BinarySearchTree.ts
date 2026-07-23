@@ -2,7 +2,7 @@ import type { NonNullComparable } from "../../types/dsa";
 // import type { Queue as QueueType } from "../queues/Queue";
 // import { Queue } from "../queues/Queue.ts";
 
-class BSTNode<T extends NonNullComparable> {
+export class BSTNode<T extends NonNullComparable> {
   value: T;
   key: T;
   size: number = 1;
@@ -31,10 +31,6 @@ class BSTNode<T extends NonNullComparable> {
 
 export class BST<T extends NonNullComparable> {
   root: BSTNode<T> | null = null;
-
-  constructor(key?: T, value?: T) {
-    if (key != null && value != null) this.root = new BSTNode(key, value);
-  }
 
   put(key: T, value: T | null): void {
     let parent: BSTNode<T> | null = null;
@@ -87,8 +83,10 @@ export class BST<T extends NonNullComparable> {
   delete(key: T): void {
     const node = this.findNode(key);
     if (node === null) return;
+
     const parent = node.parent;
     const children = (node.left ? 1 : 0) + (node.right ? 1 : 0);
+
     if (children === 0) {
       this.detach(node);
       if (parent === null) this.root = null;
@@ -291,5 +289,56 @@ export class BST<T extends NonNullComparable> {
     }
 
     if (hi === null || hi >= node.key!) this.traverse(node.right, q, lo, hi);
+  }
+
+  /**
+   * Renders the tree level by level: root on the first line, depth-1 nodes on
+   * the next, and so on, down to a final row of nulls below the deepest nodes.
+   * Each parent is centered over the span its children occupy.
+   */
+  toString(nullLabel: string = "·"): string {
+    if (this.root === null) return "(empty)";
+
+    const label = (n: BSTNode<T> | null): string =>
+      n === null ? nullLabel : String(n.key);
+
+    // Build complete levels (missing children kept as null) until a level is
+    // entirely null; that all-null level becomes the last row.
+    const levels: (BSTNode<T> | null)[][] = [];
+    let current: (BSTNode<T> | null)[] = [this.root];
+    while (current.some((n) => n !== null)) {
+      levels.push(current);
+      const next: (BSTNode<T> | null)[] = [];
+      for (const node of current) {
+        next.push(node?.left ?? null);
+        next.push(node?.right ?? null);
+      }
+      current = next;
+    }
+    levels.push(current); // the trailing all-null row
+
+    // Cell width = widest label; odd width centers cleanly.
+    let w = nullLabel.length;
+    for (const level of levels)
+      for (const n of level) w = Math.max(w, label(n).length);
+    if (w % 2 === 0) w += 1;
+
+    const depth = levels.length;
+    const totalWidth = 2 ** (depth - 1) * w; // width of the bottom row
+
+    const lines: string[] = [];
+    for (const level of levels) {
+      const segment = totalWidth / level.length; // space allotted per node
+      let line = "";
+      for (const n of level) {
+        const s = label(n);
+        const pad = segment - s.length;
+        const left = Math.floor(pad / 2);
+        line += " ".repeat(left) + s + " ".repeat(pad - left);
+      }
+      lines.push(line.replace(/\s+$/, ""));
+    }
+
+    return lines.join("\n");
   }
 }
