@@ -274,11 +274,12 @@ export function createTArray<T extends NonNullComparable>(
   throw new Error("Cannot create array from user input");
 }
 
-function isNonEmptyIterable<T>(someIter?: Iterable<T>) {
+export function isNonEmptyIterable<T>(someIter: any): someIter is Iterable<T> {
   if (someIter == null) return false;
   if (Symbol.iterator in someIter) {
     const iterObj = someIter[Symbol.iterator](); //get iterator object
     const iterResult = iterObj.next();
     if (iterResult.value != null) return true;
-  } else return false;
+  }
+  return false;
 }

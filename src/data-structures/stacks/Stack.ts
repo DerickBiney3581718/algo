@@ -2,7 +2,7 @@ import { Base } from "../Base";
 import { LinkedList } from "../linked-lists/LinkedLists";
 
 export class Stack<T> extends Base {
-  private engine: LinkedList<T> = new LinkedList([]);
+  private engine: LinkedList<T> = new LinkedList();
 
   constructor(list: Iterable<T> = []) {
     super();
@@ -25,5 +25,9 @@ export class Stack<T> extends Base {
       break;
     }
     return initValue;
+  }
+
+  toString() {
+    return this.engine.toString();
   }
 }

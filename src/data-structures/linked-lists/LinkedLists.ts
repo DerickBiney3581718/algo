@@ -10,14 +10,28 @@ export class LinkNode<T> {
   }
 }
 
-export class LinkedList<T> extends Base {
+export type CompareFn<T, Q> = (counter: LinkNode<T>, value: Q) => boolean;
+export type KeyFn<T, Q> = (value: T) => Q;
+
+export class LinkedList<T, Q = T> extends Base {
   head: LinkNode<T> | null = null;
   tail: LinkNode<T> | null = null;
   _iter: LinkNode<T> | null = null;
 
-  constructor(list: Iterable<T>) {
+  compareFn: CompareFn<T, Q> = (counter, value) =>
+    this.keyOf(counter.value) === value;
+
+  keyOf: KeyFn<T, Q> = (value: T) => value as unknown as Q;
+
+  constructor(
+    list?: Iterable<T>,
+    compareFn?: CompareFn<T, Q>,
+    keyOf?: KeyFn<T, Q>,
+  ) {
     super();
-    for (const value of list) this.insert(value);
+    if (compareFn) this.compareFn = compareFn;
+    if (keyOf) this.keyOf = keyOf;
+    if (list) for (const value of list) this.insert(value);
   }
 
   insert(value: T): void {
@@ -38,26 +52,26 @@ export class LinkedList<T> extends Base {
     this.tail = newNode;
   }
 
-  search(value: T): LinkNode<T> | null {
+  search(value: Q): LinkNode<T> | null {
     let counter = this.head;
     let found = null;
 
     while (counter && found === null) {
-      if (counter.value === value) found = counter;
+      if (this.compareFn(counter, value)) found = counter;
       counter = counter.next;
     }
     return found;
   }
 
   update(value: T): boolean {
-    const found = this.search(value);
+    const found = this.search(this.keyOf(value));
     if (found === null) return false;
     found.value = value;
     return true;
   }
 
-  remove(value: T): LinkNode<T> | null {
-    const found = this.search(value);
+  remove(query: Q): LinkNode<T> | null {
+    const found = this.search(query);
     if (found === null) return found;
     else {
       if (found === this.head) {
@@ -78,7 +92,7 @@ export class LinkedList<T> extends Base {
   removeFromStart(): LinkNode<T> | null {
     const headValue = this.head?.value;
     if (headValue == null) return null;
-    return this.remove(headValue);
+    return this.remove(this.keyOf(headValue));
   }
 
   /**
@@ -86,11 +100,11 @@ export class LinkedList<T> extends Base {
    * depends on non-duplicates
    * @returns LinkNode<T>
    */
-  removeFromEnd(): LinkNode<T> | null {
-    const tailValue = this.tail?.value;
-    if (tailValue == null) return null;
-    return this.remove(tailValue);
-  }
+  // removeFromEnd(): LinkNode<T> | null {
+  //   const tailValue = this.tail?.value;
+  //   if (tailValue == null) return null;
+  //   return this.remove(tailValue);
+  // }
 
   _prev(value: T): LinkNode<T> | null {
     let currNode = this.head;
@@ -117,5 +131,11 @@ export class LinkedList<T> extends Base {
 
   [Symbol.iterator]() {
     return this;
+  }
+
+  toString() {
+    const values: string[] = [];
+    for (const val of this) values.push(String(val));
+    return values.join(" -> ");
   }
 }
