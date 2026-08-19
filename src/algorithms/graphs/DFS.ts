@@ -1,12 +1,12 @@
 import { UndirectedGraph } from "../../data-structures/graphs/UndirectedGraph";
 import { Queue } from "../../data-structures/queues/Queue";
 
-function dfs(
+export function dfs(
   G: UndirectedGraph,
   search: number,
   root?: number,
-  q?: Queue<number>,
   marked?: boolean[],
+  q?: Queue<number>,
 ): Queue<number> | -1 {
   if (root == null) root = Math.ceil(Math.random() * G.V);
   if (!marked) marked = Array.from({ length: G.V }, () => false);
@@ -20,7 +20,7 @@ function dfs(
     q.enqueue(vtx);
     marked[vtx] = true;
 
-    const res = dfs(G, search, vtx, q, marked);
+    const res = dfs(G, search, vtx, marked, q);
     if (res !== -1) return res; // early return
   }
   return -1;

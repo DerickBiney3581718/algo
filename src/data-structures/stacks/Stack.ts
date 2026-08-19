@@ -3,6 +3,7 @@ import { LinkedList } from "../linked-lists/LinkedLists";
 
 export class Stack<T> extends Base {
   private engine: LinkedList<T> = new LinkedList();
+  private _size = 0;
 
   constructor(list: Iterable<T> = []) {
     super();
@@ -11,11 +12,13 @@ export class Stack<T> extends Base {
 
   pop(): T | null {
     const popped = this.engine?.removeFromStart()?.value ?? null;
+    this._size--;
     return popped;
   }
 
   push(value: T): void {
     this.engine.insert(value);
+    this._size++;
   }
 
   peek(): T | null {
@@ -29,5 +32,9 @@ export class Stack<T> extends Base {
 
   toString() {
     return this.engine.toString();
+  }
+
+  get size(): number {
+    return this._size;
   }
 }
