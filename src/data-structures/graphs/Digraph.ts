@@ -1,19 +1,28 @@
 import { LinkedList } from "../linked-lists/LinkedLists";
-export type Edge = [number, number];
+import type { Edge } from "./UndirectedGraph";
+
 /**
- * tremaux exploration using adjacency list
- * other possible implementations:
- * 1. list of edges 2. adjacency matrix 3. adjacency sets
- * Can consider using STs if API needs a vertex insertion and deletion
+ * public class Digraph
+ *Digraph(int V) create a V-vertex digraph with no edges
+ *Digraph(In in) read a digraph from input stream in
+ *nt V() number of vertices
+ *int E() number of edges
+ *void addEdge(int v, int w) add edge v->w to this digraph
+ *Iterable<Integer> adj(int v) vertices connected to v by edges
+ *pointing from v
+ *Digraph reverse() reverse of this digraph
+ *String toString()
  */
-export class UndirectedGraph {
+export class Digraph {
   V: number = 0;
   E: number = 0;
   private _adj: Array<LinkedList<number>>;
 
   constructor(V: number, edges?: Edge[]) {
     this.V = V;
-    this._adj = Array.from({ length: V + 1 }); // zero unused
+    this._adj = Array.from({ length: V + 1 }).map(() => {
+      return new LinkedList<number>();
+    }); // zero unused
 
     if (edges && edges.length) {
       for (const [vtxA, vtxB] of edges) this.addEdge(vtxA, vtxB);
@@ -22,7 +31,6 @@ export class UndirectedGraph {
 
   addEdge(vtxA: number, vtxB: number) {
     this.joinVtx(vtxA, vtxB);
-    this.joinVtx(vtxB, vtxA);
     this.E++;
   }
 
@@ -38,6 +46,17 @@ export class UndirectedGraph {
     return this._adj[vtx];
   }
 
+  reverse(): Digraph {
+    const R = new Digraph(this.V);
+    for (let idx = 1; idx <= this.V; idx++) {
+      for (const vtx of this.adj(idx)) {
+        if (vtx == null) continue;
+        R.addEdge(idx, vtx);
+      }
+    }
+    return R;
+  }
+
   toString() {
     let str = "";
     for (let index = 1; index <= this.V; index++) {
@@ -46,5 +65,3 @@ export class UndirectedGraph {
     return str;
   }
 }
-
-// Multiple source reachability, given multiple source vertices, does any have a path to the target q?

@@ -17,6 +17,7 @@ export class LinkedList<T, Q = T> extends Base {
   head: LinkNode<T> | null = null;
   tail: LinkNode<T> | null = null;
   _iter: LinkNode<T> | null = null;
+  private _size: number = 0;
 
   compareFn: CompareFn<T, Q> = (counter, value) =>
     this.keyOf(counter.value) === value;
@@ -44,12 +45,14 @@ export class LinkedList<T, Q = T> extends Base {
       this.head = nextNode;
     }
     this._iter = this.head;
+    this._size++;
   }
 
   insertAtEnd(value: T): void {
     const newNode = new LinkNode(value);
     if (this.tail) this.tail.next = newNode;
     this.tail = newNode;
+    this._size++;
   }
 
   search(value: Q): LinkNode<T> | null {
@@ -86,6 +89,7 @@ export class LinkedList<T, Q = T> extends Base {
         prev.next = found.next;
       }
     }
+    this._size--;
     return found;
   }
 
@@ -137,5 +141,9 @@ export class LinkedList<T, Q = T> extends Base {
     const values: string[] = [];
     for (const val of this) values.push(String(val));
     return values.join(" -> ");
+  }
+
+  get size(): number {
+    return this._size;
   }
 }
