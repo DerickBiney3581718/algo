@@ -1,15 +1,11 @@
-import {
-  VISUAL_OPS_TYPES,
-  type Comparable,
-  type NonNullComparable,
-} from "../../types/dsa";
-import { Base } from "../Base";
+import { VISUAL_OPS_TYPES, type NonNullComparable } from "../../types/dsa";
+import { Base, type CompareFn, type ValueOfFn } from "../Base";
 
-export interface TArray<T extends number | string | null> {
-  [idx: number]: T | null;
+export interface TArray<T> {
+  [idx: number]: T | null; //Added this interface to make subscriptable
 }
 
-export class TArray<T extends Comparable> extends Base {
+export class TArray<T> extends Base<T> {
   arr: (T | null)[];
   private isSorted: boolean;
   private nextCounter: number = 0;
@@ -19,13 +15,16 @@ export class TArray<T extends Comparable> extends Base {
   get length() {
     return this.arr.length;
   }
+
   constructor(
     initArr: Iterable<T | null>,
     isSorted: boolean = false,
     isResizable: boolean = false,
     length: number = 100,
+    compareFn?: CompareFn<T>,
+    valueOfFn?: ValueOfFn<T>,
   ) {
-    super();
+    super(compareFn, valueOfFn);
 
     if (isNonEmptyIterable(initArr)) this.arr = Array.from(initArr);
     else this.arr = Array.from({ length });
@@ -81,7 +80,7 @@ export class TArray<T extends Comparable> extends Base {
           op: VISUAL_OPS_TYPES.MOVE_PTRS,
           args: { idx },
         });
-        return val === searchVal;
+        return this.compare(val, searchVal) === 0;
       });
 
     // RECORD STATE
@@ -188,7 +187,7 @@ export class TArray<T extends Comparable> extends Base {
     high: number = this.validLen - 1,
     low: number = 0,
   ): number {
-    if (searchVal === null) return -1;
+    if (searchVal === null || this.valueOf(searchVal) === null) return -1;
 
     if (low > high) return -1;
     const mid = Math.ceil((high + low) / 2);
@@ -199,8 +198,9 @@ export class TArray<T extends Comparable> extends Base {
 
     const midValue = this.arr[mid];
     if (midValue === null) return -1;
-    if (midValue === searchVal) return mid;
-    else if (midValue > searchVal) high = mid - 1;
+    const eq = this.compare(midValue, searchVal);
+    if (eq === 0) return mid;
+    else if (eq === 1) high = mid - 1;
     else low = mid + 1;
     return this.binarySearch(searchVal, high, low);
   }

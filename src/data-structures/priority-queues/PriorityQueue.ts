@@ -3,18 +3,23 @@
  * naive implementation using an array
  */
 
-import type { Comparable } from "../../types/dsa";
 import { TArray } from "../arrays/Array";
-import { Base } from "../Base";
+import { Base, type CompareFn, type ValueOfFn } from "../Base";
 
-export class PriorityQueue<T extends Comparable> extends Base {
+export class PriorityQueue<T> extends Base<T> {
   protected array: TArray<T>; // stays structurally, changes semantically in indexed pq, avoid external errors
   isMin: boolean = false;
 
-  constructor(max?: number, isMin: boolean = false) {
-    super();
-    if (max) this.array = new TArray([], false, false, max);
-    else this.array = new TArray([], false, true, 1);
+  constructor(
+    max?: number,
+    isMin: boolean = false,
+    valueOfFn?: ValueOfFn<T>,
+    compareFn?: CompareFn<T>,
+  ) {
+    super(compareFn, valueOfFn);
+
+    if (max) this.array = new TArray<T>([], false, false, max);
+    else this.array = new TArray<T>([], false, true, 1);
     this.array.insert(null);
     this.isMin = isMin;
   }
@@ -45,7 +50,7 @@ export class PriorityQueue<T extends Comparable> extends Base {
     }
   }
 
-  insert(value: T, metadata?: T): number | null {
+  insert(value: T, metadata?: any): number | null {
     this.array.insert(value);
     let currentIdx = this.array.validLen - 1;
     this.insertSideEffects(currentIdx, value, metadata);
@@ -100,16 +105,19 @@ export class PriorityQueue<T extends Comparable> extends Base {
   _isLess(left: number, right: number): boolean {
     const rightVal = this._valueOf(right);
     const leftVal = this._valueOf(left);
-    if (rightVal == null) return false;
-    if (leftVal == null) return true;
-
-    return this.isMin ? leftVal > rightVal : leftVal < rightVal;
+    const dir = this.compare(leftVal, rightVal);
+    return this.isMin ? dir === -1 : dir === 1;
   }
 
   _valueOf(idx: number): T | null {
     return this.array[idx];
   }
 
+  update(idx: number, value: T): void {
+    this.array.update(idx, value);
+    this._bubbleDown(idx);
+    this._bubbleUp(idx);
+  }
   getParentIdx(idx: number): number {
     return Math.trunc(idx / 2);
   }
@@ -134,15 +142,3 @@ export class PriorityQueue<T extends Comparable> extends Base {
     return this.array.toString();
   }
 }
-
-// const pq = new PriorityQueue<number>(20);
-// const entries = new TArray<number>([1, 16, 9, 32, 78, 8, 4]);
-// pq.insertBulk(entries);
-// console.log(`${pq}`);
-// console.log(pq.delMax());
-// console.log(pq.delMax());
-// console.log(pq.delMax());
-// console.log(pq.insert(1000));
-// console.log(pq.insert(89));
-
-// console.log(`${pq}`);

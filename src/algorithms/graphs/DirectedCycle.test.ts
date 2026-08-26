@@ -1,65 +1,25 @@
-// tinyDG: 13 vertices (1..13), 22 edges — has cycles +
-
 import { assert, describe, expect, it } from "vitest";
+import tinyDGText from "../../data/graphs/tinyDG.txt?raw";
+import tinyDAGText from "../../data/graphs/tinyDAG.txt?raw";
+import tinyChainText from "../../data/graphs/tinyChain.txt?raw";
+import { parseGraph } from "../../data/graphs/parse";
 import { Digraph } from "../../data-structures/graphs/Digraph";
-import type { Edge } from "../../data-structures/graphs/UndirectedGraph";
 import { DirectedCycle } from "./DirectedCycle";
 
 describe("Directed Cycles", () => {
-  const tinyDG: Edge[] = [
-    [5, 3],
-    [3, 4],
-    [4, 3],
-    [7, 1],
-    [1, 2],
-    [3, 1],
-    [12, 13],
-    [13, 10],
-    [10, 11],
-    [10, 12],
-    [8, 10],
-    [11, 13],
-    [12, 5],
-    [5, 4],
-    [4, 6],
-    [7, 9],
-    [9, 7],
-    [6, 5],
-    [1, 6],
-    [7, 5],
-    [7, 10],
-    [8, 7],
-  ];
-  const G = new Digraph(13, tinyDG);
+  // tinyDG: 13 vertices (1..13), 22 edges — has cycles
+  const tinyDG = parseGraph(tinyDGText);
+  const G = new Digraph(tinyDG.V, tinyDG.edges);
   const dd = new DirectedCycle(G);
 
-  const tinyDAG: Edge[] = [
-    [3, 4],
-    [1, 7],
-    [1, 2],
-    [3, 1],
-    [12, 13],
-    [10, 13],
-    [10, 11],
-    [10, 12],
-    [4, 6],
-    [9, 8],
-    [6, 5],
-    [1, 6],
-    [7, 5],
-    [7, 10],
-    [8, 7],
-  ];
-  const DAG = new Digraph(13, tinyDAG);
+  // tinyDAG: 13 vertices, 15 edges — acyclic
+  const tinyDAG = parseGraph(tinyDAGText);
+  const DAG = new Digraph(tinyDAG.V, tinyDAG.edges);
   const dc = new DirectedCycle(DAG);
 
-  const tinyChain: Edge[] = [
-    [1, 3],
-    [2, 3],
-    [3, 4],
-    [3, 5],
-  ];
-  const DAG2 = new Digraph(5, tinyChain);
+  // tinyChain: 1,2 -> 3 -> 4,5 — acyclic
+  const tinyChain = parseGraph(tinyChainText);
+  const DAG2 = new Digraph(tinyChain.V, tinyChain.edges);
   const tc = new DirectedCycle(DAG2);
 
   it("has cycles", () => {
@@ -84,33 +44,3 @@ describe("Directed Cycles", () => {
     assert(tcCycle.size == 0);
   });
 });
-
-// // tinyDAG: 13 vertices, 15 edges — acyclic, use for
-// //   TopSort
-// const tinyDAG: Edge[] = [
-//   [3, 4],
-//   [1, 7],
-//   [1, 2],
-//   [3, 1],
-//   [12, 13],
-//   [10, 13],
-//   [10, 11],
-//   [10, 12],
-//   [4, 6],
-//   [9, 8],
-//   [6, 5],
-//   [1, 6],
-//   [7, 5],
-//   [7, 10],
-//   [8, 7],
-// ];
-// const DAG = new Digraph(13, tinyDAG);
-
-// // tiny cyclic — smallest useful DirectedCycle case:
-// //   1->2->3->1, plus tail 4
-// const tinyCycle: Edge[] = [
-//   [1, 2],
-//   [2, 3],
-//   [3, 1],
-//   [3, 4],
-// ];
