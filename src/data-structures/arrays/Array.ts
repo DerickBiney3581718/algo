@@ -1,5 +1,5 @@
 import { VISUAL_OPS_TYPES, type NonNullComparable } from "../../types/dsa";
-import { Base, type CompareFn, type ValueOfFn } from "../Base";
+import { Base, type ValueOfFn } from "../Base";
 
 export interface TArray<T> {
   [idx: number]: T | null; //Added this interface to make subscriptable
@@ -21,10 +21,9 @@ export class TArray<T> extends Base<T> {
     isSorted: boolean = false,
     isResizable: boolean = false,
     length: number = 100,
-    compareFn?: CompareFn<T>,
-    valueOfFn?: ValueOfFn<T>,
+    valueOf?: ValueOfFn<T | null>,
   ) {
-    super(compareFn, valueOfFn);
+    super(valueOf);
 
     if (isNonEmptyIterable(initArr)) this.arr = Array.from(initArr);
     else this.arr = Array.from({ length });
@@ -52,13 +51,15 @@ export class TArray<T> extends Base<T> {
     return this.validLen === 0;
   }
 
-  delete(idx: number) {
+  delete(idx: number): T | null {
+    const value = this.arr[idx];
     const newArr = this.arr.slice(0, idx).concat(this.arr.slice(idx + 1));
     newArr.length = this.length;
     this.arr = newArr;
 
     const state = this.arr;
     this.recordDelete(idx, state);
+    return value;
   }
 
   update(idx: number | null, val: T | null) {
@@ -187,7 +188,7 @@ export class TArray<T> extends Base<T> {
     high: number = this.validLen - 1,
     low: number = 0,
   ): number {
-    if (searchVal === null || this.valueOf(searchVal) === null) return -1;
+    if (searchVal === null) return -1;
 
     if (low > high) return -1;
     const mid = Math.ceil((high + low) / 2);
@@ -198,10 +199,12 @@ export class TArray<T> extends Base<T> {
 
     const midValue = this.arr[mid];
     if (midValue === null) return -1;
+
     const eq = this.compare(midValue, searchVal);
     if (eq === 0) return mid;
     else if (eq === 1) high = mid - 1;
     else low = mid + 1;
+
     return this.binarySearch(searchVal, high, low);
   }
 

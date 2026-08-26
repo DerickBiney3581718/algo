@@ -13,7 +13,7 @@ export class LinkNode<T> {
 export type CompareFn<T, Q> = (counter: LinkNode<T>, value: Q) => boolean;
 export type KeyFn<T, Q> = (value: T) => Q;
 
-export class LinkedList<T, Q = T> extends Base {
+export class LinkedList<T, Q = T> extends Base<T> {
   head: LinkNode<T> | null = null;
   tail: LinkNode<T> | null = null;
   _iter: LinkNode<T> | null = null;

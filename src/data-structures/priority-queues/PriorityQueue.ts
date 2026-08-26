@@ -3,20 +3,43 @@
  * naive implementation using an array
  */
 
+import type { Comparable } from "../../types/dsa";
 import { TArray } from "../arrays/Array";
-import { Base, type CompareFn, type ValueOfFn } from "../Base";
+import { Base, type ValueOfFn } from "../Base";
 
-export class PriorityQueue<T> extends Base<T> {
+export interface OnDelete {
+  (_meta: { heapIdx: number; value: Comparable }): void;
+}
+
+export interface OnInsert {
+  (_meta: { heapIdx: number; value: Comparable }): void;
+}
+
+export interface OnSwap {
+  (_meta: { left: number; right: number }): void;
+}
+
+export class PriorityQueue<T extends Comparable> extends Base<T> {
   protected array: TArray<T>; // stays structurally, changes semantically in indexed pq, avoid external errors
   isMin: boolean = false;
+  private onDelete: OnDelete = () => {};
+  private onInsert: OnInsert = () => {};
+  private onSwap: OnSwap = () => {};
 
-  constructor(
-    max?: number,
-    isMin: boolean = false,
-    valueOfFn?: ValueOfFn<T>,
-    compareFn?: CompareFn<T>,
-  ) {
-    super(compareFn, valueOfFn);
+  constructor(params: {
+    max?: number;
+    isMin: boolean;
+    valueOf?: ValueOfFn<T | null>;
+    onDelete?: OnDelete;
+    onInsert?: OnInsert;
+    onSwap?: OnSwap;
+  }) {
+    const { valueOf, max, isMin = false, onDelete, onInsert, onSwap } = params;
+    super(valueOf);
+
+    if (onDelete) this.onDelete = onDelete;
+    if (onInsert) this.onInsert = onInsert;
+    if (onSwap) this.onSwap = onSwap;
 
     if (max) this.array = new TArray<T>([], false, false, max);
     else this.array = new TArray<T>([], false, true, 1);
@@ -24,37 +47,60 @@ export class PriorityQueue<T> extends Base<T> {
     this.isMin = isMin;
   }
 
-  delMax(): T | null {
+  get isEmpty(): boolean {
+    return this.array.isEmpty;
+  }
+
+  get size(): number {
+    return this.array.validLen;
+  }
+
+  delTop(): T | null {
+    if (this.isEmpty) return null;
     const max = this.array[1];
-    this._delete(1);
+    this.delete(1);
     return max;
   }
 
-  _delete(idx: number): void {
-    const lastIdx = this.array.validLen - 1;
+  delete(idx: number): void {
+    const heapIdx = this.array.validLen - 1;
 
-    this.swap(idx, lastIdx);
+    this.swap(idx, heapIdx);
 
-    this.deleteSideEffects(lastIdx);
-    this.array.delete(lastIdx);
+    const value = this.array.delete(heapIdx);
+    this.onDelete({ heapIdx, value });
 
     this._bubbleDown(idx);
   }
 
-  deleteSideEffects(_deletedIdx: number) {}
-  insertSideEffects(_insertedIdx: number, _value: T, _metadata?: T) {}
+  insert(value: T): number | null {
+    this.array.insert(value);
+    const heapIdx = this.array.validLen - 1;
+    this.onInsert({ heapIdx, value });
+    return this._bubbleUp(heapIdx);
+  }
 
   insertBulk(entries: TArray<T>) {
     for (const value of entries) {
-      if (value) this.insert(value);
+      if (value == null) continue;
+      this.insert(value);
     }
   }
 
-  insert(value: T, metadata?: any): number | null {
-    this.array.insert(value);
-    let currentIdx = this.array.validLen - 1;
-    this.insertSideEffects(currentIdx, value, metadata);
-    return this._bubbleUp(currentIdx);
+  update(idx: number, value: T): number {
+    this.array.update(idx, value);
+    this.reheapify(idx);
+    return idx;
+  }
+
+  reheapify(idx: number): void {
+    this._bubbleDown(idx);
+    this._bubbleUp(idx);
+  }
+
+  peek(): T | null {
+    if (this.isEmpty) return null;
+    return this.array[1];
   }
 
   /**
@@ -62,12 +108,12 @@ export class PriorityQueue<T> extends Base<T> {
    * @param childIdx
    * @returns
    */
-  _bubbleUp(childIdx: number | null): number | null {
+  private _bubbleUp(childIdx: number | null): number | null {
     if (childIdx == null) return null;
-    const parentIdx = this.getParentIdx(childIdx);
-    if (!parentIdx) return childIdx;
+    const parentIdx = PriorityQueue.getParentIdx(childIdx);
+    if (parentIdx < 1) return childIdx;
 
-    if (this._isLess(parentIdx, childIdx)) {
+    if (this._shouldSink(parentIdx, childIdx)) {
       this.swap(parentIdx, childIdx);
       return this._bubbleUp(parentIdx);
     }
@@ -77,8 +123,9 @@ export class PriorityQueue<T> extends Base<T> {
   /**
    * swap
    */
-  swap(left: number, right: number): void {
+  private swap(left: number, right: number): void {
     this.array._swap(left, right);
+    this.onSwap({ left, right });
   }
 
   /**
@@ -86,56 +133,58 @@ export class PriorityQueue<T> extends Base<T> {
    * @param idx
    * @returns
    */
-  _bubbleDown(parentIdx: number | null): void {
+  private _bubbleDown(parentIdx: number | null): void {
     if (parentIdx == null || parentIdx >= this.size) return;
-    const leftChildIdx = this.getLeftChildIdx(parentIdx);
-    const rightChildIdx = this.getRightChildIdx(parentIdx);
+    const leftChildIdx = PriorityQueue.getLeftChildIdx(parentIdx);
+    const rightChildIdx = PriorityQueue.getRightChildIdx(parentIdx);
 
-    for (let childIdx = leftChildIdx; childIdx <= rightChildIdx; childIdx++) {
-      const childValue = this.array[childIdx];
-      if (childValue == null) continue;
+    const lastIdx = this.size - 1;
 
-      if (this._isLess(parentIdx, childIdx)) {
-        this.swap(parentIdx, childIdx);
-        return this._bubbleDown(childIdx);
-      }
-    }
+    let selectedChildIdx = parentIdx;
+    if (
+      leftChildIdx <= lastIdx &&
+      this.heapVal(leftChildIdx) != null &&
+      this._shouldSink(selectedChildIdx, leftChildIdx)
+    )
+      selectedChildIdx = leftChildIdx;
+    if (
+      rightChildIdx <= lastIdx &&
+      this.heapVal(rightChildIdx) != null &&
+      this._shouldSink(selectedChildIdx, rightChildIdx)
+    )
+      selectedChildIdx = rightChildIdx;
+
+    if (parentIdx === selectedChildIdx) return;
+    this.swap(parentIdx, selectedChildIdx);
+    this._bubbleDown(selectedChildIdx);
   }
 
-  _isLess(left: number, right: number): boolean {
-    const rightVal = this._valueOf(right);
-    const leftVal = this._valueOf(left);
-    const dir = this.compare(leftVal, rightVal);
-    return this.isMin ? dir === -1 : dir === 1;
+  // when bubbling down, for max: is left less, for min: is left greater. then switch
+  private _shouldSink(left: number, right: number): boolean {
+    const leftVal = this.heapVal(left);
+    const rightVal = this.heapVal(right);
+
+    let dir = null;
+    if (this.isMin) dir = this.compare(leftVal, rightVal);
+    else dir = this.compare(rightVal, leftVal);
+
+    return dir === 1;
   }
 
-  _valueOf(idx: number): T | null {
+  heapVal(idx: number): T | null {
     return this.array[idx];
   }
 
-  update(idx: number, value: T): void {
-    this.array.update(idx, value);
-    this._bubbleDown(idx);
-    this._bubbleUp(idx);
-  }
-  getParentIdx(idx: number): number {
+  private static getParentIdx(idx: number): number {
     return Math.trunc(idx / 2);
   }
 
-  getLeftChildIdx(idx: number): number {
+  private static getLeftChildIdx(idx: number): number {
     return idx * 2;
   }
 
-  getRightChildIdx(idx: number): number {
-    return this.getLeftChildIdx(idx) + 1;
-  }
-
-  get isEmpty(): boolean {
-    return this.array.isEmpty;
-  }
-
-  get size(): number {
-    return this.array.length;
+  private static getRightChildIdx(idx: number): number {
+    return PriorityQueue.getLeftChildIdx(idx) + 1;
   }
 
   toString() {

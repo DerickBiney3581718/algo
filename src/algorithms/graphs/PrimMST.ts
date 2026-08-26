@@ -12,21 +12,20 @@ import { Queue } from "../../data-structures/queues/Queue";
 export class PrimMST {
   G: WUndirectedGraph;
   _weight: number = 0;
-  pq: IndexedPriorityQueue<WEdge>;
-  dist: number[];
-  edgeTo: number[];
+  pq: IndexedPriorityQueue;
+  dist: number[]; //last shortest weight recorded for the vertex
+  edgeTo: WEdge[]; //current edge for vtx
   q: Queue<WEdge> = new Queue();
+  marked: boolean[];
 
-  constructor(G: WUndirectedGraph) {
+  constructor(G: WUndirectedGraph, source: number = 1) {
     this.G = G;
     this.dist = Array.from({ length: G.V + 1 }, () => Number.MAX_SAFE_INTEGER);
     this.edgeTo = Array.from({ length: G.V + 1 });
+    this.marked = Array.from({ length: G.V + 1 }, () => false);
     this.pq = new IndexedPriorityQueue(G.V + 1, true); // only non-tree min crossing edges
 
-    // insert first vertex
-    this._updateDist(1, 0);
-    this._addEdges(1);
-
+    this._addEdges(source); //!disconnected components
     this.buildTree();
   }
 
@@ -35,48 +34,38 @@ export class PrimMST {
   }
 
   buildTree(): void {
-    console.log(`is empty? ${this.pq.isEmpty} ${this.pq}`);
     while (!this.pq.isEmpty) {
-      const min = this.pq.delMax();
-      console.log(`min: ${min}`);
+      const min = this.pq.delTop();
       if (min == null) return;
 
-      this.q.enqueue(min);
-      this._weight += min.weight;
+      const minEdge = this.edgeTo[min];
+      this.q.enqueue(minEdge);
+      this._weight += minEdge.weight;
 
-      let treeVtx = min.either();
-      let newVtx = min.other(treeVtx);
-
-      if (this.edgeTo[treeVtx] == null) [treeVtx, newVtx] = [newVtx, treeVtx];
-      this.edgeTo[newVtx] = treeVtx;
-      this._addEdges(newVtx);
+      if (this.marked[min] != true) this._addEdges(min);
     }
-  }
-
-  _updateDist(vtx: number, weight: number): void {
-    this.dist[vtx] = weight;
   }
 
   _addEdges(vtx: number): void {
     for (const edge of this.G.adj(vtx)) {
-      console.log(`edge: ${edge}`);
-
       if (edge == null) continue;
+
       const other = edge.other(vtx);
+      if (this.marked[other]) continue;
 
-      if (this.edgeTo[other]) continue;
-      if (this.dist[other] == Number.MAX_SAFE_INTEGER) {
-        console.log("inserting...");
-
-        this.pq.insertWithKey(other, edge);
+      if (!this.pq.contains(other)) {
+        this.pq.insert(other, edge.weight);
         this.dist[other] = edge.weight;
+        this.edgeTo[other] = edge;
       } else {
         if (this.dist[other] <= edge.weight) continue;
         else {
+          this.pq.update(other, edge.weight);
           this.dist[other] = edge.weight;
-          this.pq.updateItem(other, edge);
+          this.edgeTo[other] = edge;
         }
       }
     }
+    this.marked[vtx] = true;
   }
 }

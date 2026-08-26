@@ -15,7 +15,6 @@ describe("PrimMST", () => {
     expect(G.E).toBe(16);
 
     const mst = new PrimMST(G);
-    console.log(mst);
 
     expect(mst.q.size).toBe(G.V - 1);
     expect(mst.weight).toBeCloseTo(1.81, 5);

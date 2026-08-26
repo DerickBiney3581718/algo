@@ -1,14 +1,12 @@
-import type { Comparable, VisualOp } from "../types/dsa";
+import type { VisualOp } from "../types/dsa";
 
-export type CompareFn<T> = (left: T, right: T) => number;
-export type ValueOfFn<T> = (item: T) => Comparable;
+export type ValueOfFn<T> = (left: T) => string | number | null;
 
 export abstract class Base<T> extends EventTarget {
   protected operations: VisualOp[] = [];
 
-  valueOf(item: T | null): Comparable {
-    return String(item);
-  }
+  valueOf: ValueOfFn<T | null> = (value) =>
+    value == null ? null : String(value);
 
   compare(left: T | null, right: T | null): number {
     const leftVal = this.valueOf(left);
@@ -21,9 +19,8 @@ export abstract class Base<T> extends EventTarget {
     else return 0;
   }
 
-  constructor(compare?: CompareFn<T>, valueOf?: ValueOfFn<T>) {
+  constructor(valueOf?: ValueOfFn<T | null>) {
     super();
-    if (compare) this.compare = compare;
     if (valueOf) this.valueOf = valueOf;
   }
 
