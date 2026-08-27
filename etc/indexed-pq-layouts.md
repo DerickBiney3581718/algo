@@ -3,8 +3,10 @@
 Working notes for `src/data-structures/priority-queues/IndexedPriorityQueue.ts` and its first real
 client, `src/algorithms/graphs/PrimMST.ts`.
 
-Companion docs: `etc/priority-queue-review.md` (bugs and inheritance issues),
-`etc/indexed-pq-init-order.md` (a construction-order bug).
+Companion: `etc/uncommitted-review.md` (current defects and their verification).
+
+> `etc/priority-queue-review.md` and `etc/indexed-pq-init-order.md` are **superseded** — both
+> describe an implementation that no longer exists. History only.
 
 This one is about a **design** question, not a bug: when a priority queue is indexed by a key, which
 of the three moving parts do you *store*, and which do you *compute*?
@@ -364,6 +366,10 @@ the generic disappears with it.
 
 ### 8b. Reuse of the *code* — how much of `PriorityQueue` does `IndexedPriorityQueue` actually use?
 
+> **Snapshot, superseded.** The table below describes the implementation as of the composition-with-
+> overrides version. Those members (`insertSideEffects`, `deleteSideEffects`, `_valueOf`, `delMax`)
+> no longer exist — the hooks are injected now. Kept because the *reasoning* is what §9 rests on.
+
 Tracing every call into `this.pq`:
 
 | `PriorityQueue` member | status in `IndexedPriorityQueue` |
@@ -534,7 +540,12 @@ removes a branch from the hottest function in the class, and removes the possibi
 
 ---
 
-## 11. What the current code actually does
+## 11. What the code did at the time — snapshot, all fixed
+
+> **Superseded.** Every defect in this section has since been fixed: the hooks are injected, the
+> sink selects the better child, `_isLess`/`_valueOf`/`delMax` were renamed, and `PrimMST` uses
+> `marked[]`. Kept as the worked example that motivated §9. For current defects see
+> `etc/uncommitted-review.md`.
 
 Worth recording, because it's the symptom that started this discussion — and the concrete evidence for
 §9.

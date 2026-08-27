@@ -24,12 +24,6 @@ export class WEdge {
     return v === this.v ? this.w : this.v;
   }
 
-  compareTo(that: WEdge): number {
-    if (this.weight > that.weight) return 1;
-    else if (this.weight === that.weight) return 0;
-    else return -1;
-  }
-
   toString() {
     return `E: (${this.v} -> ${this.w}), w: ${this.weight}`;
   }

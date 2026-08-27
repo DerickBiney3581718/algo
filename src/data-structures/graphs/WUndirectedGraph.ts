@@ -7,6 +7,7 @@ export class WUndirectedGraph {
   V: number = 0;
   E: number = 0;
   _adj: Array<LinkedList<WEdge>>;
+  _edges: Array<WEdge> = [];
 
   constructor(V: number, edges?: WEdgeParam[]) {
     this.V = V;
@@ -26,6 +27,8 @@ export class WUndirectedGraph {
 
     this.joinVtx(vtxA, e);
     this.joinVtx(vtxB, e);
+
+    this._edges.push(e);
     this.E++;
   }
 
@@ -39,6 +42,10 @@ export class WUndirectedGraph {
 
   adj(vtx: number): LinkedList<WEdge> {
     return this._adj[vtx];
+  }
+
+  get edges(): WEdge[] {
+    return this._edges;
   }
 
   toString() {

@@ -1,9 +1,6 @@
 /**
  * Indexed Priority Queue add methods to easily get, update and delete other elements besides max or min
- * example: Patient triage. Patients have unique ids that should be mapped to heap positions. naive implementation assuming ids are sequential 1...N - 1
- * Key -> heap position
- * key -> value
- * original: heap position -> value
+ * example: Patient triage. Patients have unique *ids that should be mapped to heap positions. *naive implementation assuming ids are *sequential 1...N - 1
  */
 
 import { TArray } from "../arrays/Array";
@@ -23,7 +20,7 @@ export class IndexedPriorityQueue {
     this.qp.update(rightKey, right);
   };
 
-  onDelete: OnDelete = ({ value }): void => {
+  onDelete: OnDelete<number> = ({ value }): void => {
     if (value == null) return;
     this.qp.update(Number(value), null);
     this.keys.update(Number(value), null);
@@ -51,8 +48,8 @@ export class IndexedPriorityQueue {
   }
 
   insert(key: number, priority: number): number | null {
+    if (this.contains(key)) throw new Error("key already exists");
     this.keys.update(key, priority);
-    if (this.contains(key)) return this.update(key, priority);
     const currIdx = this.pq.insert(key);
     this.qp.update(key, currIdx);
 

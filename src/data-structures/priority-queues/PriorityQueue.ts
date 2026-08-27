@@ -3,38 +3,46 @@
  * naive implementation using an array
  */
 
-import type { Comparable } from "../../types/dsa";
 import { TArray } from "../arrays/Array";
 import { Base, type ValueOfFn } from "../Base";
 
-export interface OnDelete {
-  (_meta: { heapIdx: number; value: Comparable }): void;
+export interface OnDelete<T> {
+  (_meta: { heapIdx: number; value: T | null }): void;
 }
 
-export interface OnInsert {
-  (_meta: { heapIdx: number; value: Comparable }): void;
+export interface OnInsert<T> {
+  (_meta: { heapIdx: number; value: T }): void;
 }
 
 export interface OnSwap {
   (_meta: { left: number; right: number }): void;
 }
 
-export class PriorityQueue<T extends Comparable> extends Base<T> {
+export class PriorityQueue<T> extends Base<T> {
   protected array: TArray<T>; // stays structurally, changes semantically in indexed pq, avoid external errors
   isMin: boolean = false;
-  private onDelete: OnDelete = () => {};
-  private onInsert: OnInsert = () => {};
+  private onDelete: OnDelete<T> = () => {};
+  private onInsert: OnInsert<T> = () => {};
   private onSwap: OnSwap = () => {};
 
   constructor(params: {
     max?: number;
-    isMin: boolean;
+    entries?: T[];
+    isMin?: boolean;
     valueOf?: ValueOfFn<T | null>;
-    onDelete?: OnDelete;
-    onInsert?: OnInsert;
+    onDelete?: OnDelete<T>;
+    onInsert?: OnInsert<T>;
     onSwap?: OnSwap;
   }) {
-    const { valueOf, max, isMin = false, onDelete, onInsert, onSwap } = params;
+    const {
+      valueOf,
+      max,
+      isMin = false,
+      onDelete,
+      onInsert,
+      onSwap,
+      entries,
+    } = params;
     super(valueOf);
 
     if (onDelete) this.onDelete = onDelete;
@@ -45,6 +53,12 @@ export class PriorityQueue<T extends Comparable> extends Base<T> {
     else this.array = new TArray<T>([], false, true, 1);
     this.array.insert(null);
     this.isMin = isMin;
+
+    if (entries?.length) {
+      for (const entry of entries) {
+        this.insert(entry);
+      }
+    }
   }
 
   get isEmpty(): boolean {
@@ -52,7 +66,7 @@ export class PriorityQueue<T extends Comparable> extends Base<T> {
   }
 
   get size(): number {
-    return this.array.validLen;
+    return Math.max(this.array.validLen - 1, 0);
   }
 
   delTop(): T | null {
@@ -70,7 +84,7 @@ export class PriorityQueue<T extends Comparable> extends Base<T> {
     const value = this.array.delete(heapIdx);
     this.onDelete({ heapIdx, value });
 
-    this._bubbleDown(idx);
+    this.reheapify(idx);
   }
 
   insert(value: T): number | null {
@@ -138,7 +152,7 @@ export class PriorityQueue<T extends Comparable> extends Base<T> {
     const leftChildIdx = PriorityQueue.getLeftChildIdx(parentIdx);
     const rightChildIdx = PriorityQueue.getRightChildIdx(parentIdx);
 
-    const lastIdx = this.size - 1;
+    const lastIdx = this.size;
 
     let selectedChildIdx = parentIdx;
     if (
@@ -159,14 +173,13 @@ export class PriorityQueue<T extends Comparable> extends Base<T> {
     this._bubbleDown(selectedChildIdx);
   }
 
-  // when bubbling down, for max: is left less, for min: is left greater. then switch
-  private _shouldSink(left: number, right: number): boolean {
-    const leftVal = this.heapVal(left);
-    const rightVal = this.heapVal(right);
+  private _shouldSink(parent: number, child: number): boolean {
+    const parentVal = this.heapVal(parent);
+    const childVal = this.heapVal(child);
 
     let dir = null;
-    if (this.isMin) dir = this.compare(leftVal, rightVal);
-    else dir = this.compare(rightVal, leftVal);
+    if (this.isMin) dir = this.compare(parentVal, childVal);
+    else dir = this.compare(childVal, parentVal);
 
     return dir === 1;
   }

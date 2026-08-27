@@ -5,11 +5,16 @@ export interface TArray<T> {
   [idx: number]: T | null; //Added this interface to make subscriptable
 }
 
+/**
+ * add a pop() that truncates in place. Both leave the visualisation behaviour intact.
+ */
+
 export class TArray<T> extends Base<T> {
   arr: (T | null)[];
   private isSorted: boolean;
   private nextCounter: number = 0;
   private isResizable: boolean = false;
+  private nextIdx = 0;
   // factory handles the incoming length
 
   get length() {
@@ -25,8 +30,10 @@ export class TArray<T> extends Base<T> {
   ) {
     super(valueOf);
 
-    if (isNonEmptyIterable(initArr)) this.arr = Array.from(initArr);
-    else this.arr = Array.from({ length });
+    if (isNonEmptyIterable(initArr)) {
+      this.arr = Array.from(initArr);
+      this.nextIdx = this.arr.length;
+    } else this.arr = Array.from({ length });
     this.isSorted = isSorted;
     this.isResizable = isResizable;
 
@@ -44,22 +51,35 @@ export class TArray<T> extends Base<T> {
   }
 
   get validLen() {
-    return this.arr.findLastIndex((value) => value !== undefined) + 1;
+    return this.nextIdx;
   }
 
   get isEmpty() {
-    return this.validLen === 0;
+    return this.validLen <= 0;
   }
 
   delete(idx: number): T | null {
     const value = this.arr[idx];
-    const newArr = this.arr.slice(0, idx).concat(this.arr.slice(idx + 1));
-    newArr.length = this.length;
-    this.arr = newArr;
+    this.recordDelete(idx, value);
+
+    this.arr.splice(idx, 1);
+    this.arr.length += 1;
+    this.nextIdx -= 1;
+
+    return value;
+  }
+
+  private recordDelete(idx: number, value: T | null) {
+    this.record({ op: VISUAL_OPS_TYPES.DEL, indices: [idx], args: { value } });
+    this.arr.slice(idx, this.validLen).forEach((_, newIdx) =>
+      this.record({
+        op: VISUAL_OPS_TYPES.SWAP,
+        indices: [idx + newIdx, newIdx + idx + 1],
+      }),
+    );
 
     const state = this.arr;
-    this.recordDelete(idx, state);
-    return value;
+    this.record({ op: VISUAL_OPS_TYPES.DONE, args: { state } });
   }
 
   update(idx: number | null, val: T | null) {
@@ -130,7 +150,8 @@ export class TArray<T> extends Base<T> {
   }
 
   private insertAndSwap(val: T | null, targetIdx?: number) {
-    const initIdx = this.validLen;
+    const initIdx = this.nextIdx;
+    this.nextIdx++;
 
     this.arr[initIdx] = val;
     const state = this.arr;
@@ -158,18 +179,6 @@ export class TArray<T> extends Base<T> {
         else break;
       }
     }
-  }
-
-  private recordDelete(idx: number, state: (T | null)[]) {
-    this.record({ op: VISUAL_OPS_TYPES.DEL, indices: [idx] });
-    this.arr.slice(idx, this.validLen).forEach((_, newIdx) =>
-      this.record({
-        op: VISUAL_OPS_TYPES.SWAP,
-        indices: [idx + newIdx, newIdx + idx + 1],
-      }),
-    );
-
-    this.record({ op: VISUAL_OPS_TYPES.DONE, args: { state } });
   }
 
   _swap(left: number, right: number) {

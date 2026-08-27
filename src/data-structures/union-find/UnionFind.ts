@@ -1,17 +1,4 @@
-// union find: dynamic connectivity
-// Array<(int, int)>; sequence of edges
-// p and q are connected means: symmetrical, transitive, and reflexive.
-// therefore they have the same equivalence class or belong to the same (connected) component
-//  initialize,
-//  add a connection between two sites,
-//  identify the component containing a site,
-//  determine whether two sites are in the same component,
-//  and count the number of components.
-
-/**
- * Weight quick union find
- */
-class UnionFind {
+export class UnionFind {
   /**
    * parent-link representation of a forest (set) of trees.
    * @property siteArr
@@ -29,15 +16,10 @@ class UnionFind {
     this.counter = sites;
   }
 
-  /**
-   * naive union is the bottle-neck. Having to loop over entire sites. Meaning for a completely connected component, we get quadratic time
-   * @param x
-   * @param y
-   */
   unionize(x: number, y: number) {
     const xRoot = this.find(x);
     const yRoot = this.find(y);
-    if (xRoot && yRoot && !this.isSame(x, y)) {
+    if (xRoot !== yRoot) {
       if (this.siteCounts[xRoot] > this.siteCounts[yRoot]) {
         this.siteArr[yRoot] = xRoot;
         this.siteCounts[xRoot] += this.siteCounts[yRoot];
