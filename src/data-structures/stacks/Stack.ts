@@ -1,7 +1,7 @@
 import { Base } from "../Base";
 import { LinkedList } from "../linked-lists/LinkedLists";
 
-export class Stack<T> extends Base {
+export class Stack<T> extends Base<T> {
   private engine: LinkedList<T> = new LinkedList();
   private _size = 0;
 

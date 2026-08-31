@@ -62,7 +62,7 @@ export class PriorityQueue<T> extends Base<T> {
   }
 
   get isEmpty(): boolean {
-    return this.array.isEmpty;
+    return this.size === 0;
   }
 
   get size(): number {

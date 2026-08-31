@@ -1,14 +1,16 @@
 import type { Digraph } from "../../data-structures/graphs/Digraph";
+import { DiWEdge } from "../../data-structures/graphs/DiWEdge";
+import { WDigraph } from "../../data-structures/graphs/WDigraph";
 import { Stack } from "../../data-structures/stacks/Stack";
 
 export class DirectedCycle {
-  G: Digraph;
+  G: Digraph | WDigraph;
   _hasCycle: boolean = false;
   marked: boolean[];
   cycle: Stack<number> = new Stack<number>();
   edgeTo: number[] = [];
 
-  constructor(G: Digraph) {
+  constructor(G: Digraph | WDigraph) {
     this.G = G;
 
     this.marked = Array.from({ length: this.G.V + 1 });
@@ -23,9 +25,10 @@ export class DirectedCycle {
     if (this._hasCycle) return;
     this.marked[src] = true;
 
-    for (const adjVtx of this.G.adj(src)) {
+    for (let adjVtx of this.G.adj(src)) {
       if (adjVtx == null) continue;
 
+      if (adjVtx instanceof DiWEdge) adjVtx = adjVtx.to;
       if (this.marked[adjVtx] !== true) {
         this.edgeTo[adjVtx] = src;
         this.dfs(adjVtx);

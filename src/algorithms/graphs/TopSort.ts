@@ -1,15 +1,19 @@
 import type { Digraph } from "../../data-structures/graphs/Digraph";
-import { Stack } from "../../data-structures/stacks/Stack";
+import { DiWEdge } from "../../data-structures/graphs/DiWEdge";
+import type { WDigraph } from "../../data-structures/graphs/WDigraph";
+
 import { DirectedCycle } from "./DirectedCycle";
 
 export class TopSort {
-  G: Digraph;
+  G: Digraph | WDigraph;
   marked: boolean[];
-  _sorted: Stack<number> = new Stack<number>();
+  _sorted: number[] = [];
+  _edges: DiWEdge[];
 
-  constructor(G: Digraph) {
+  constructor(G: Digraph | WDigraph) {
     this.G = G;
     this.marked = Array.from({ length: G.V + 1 });
+    this._edges = Array.from({ length: G.V + 1 });
 
     const hasCycle = new DirectedCycle(G).hasCycle;
     if (hasCycle) throw new Error("G has to be a DAG");
@@ -23,15 +27,19 @@ export class TopSort {
   dfs(src: number) {
     this.marked[src] = true;
 
-    for (const adjVtx of this.G.adj(src)) {
-      if (adjVtx == null || this.marked[adjVtx]) continue; // no cycles
+    for (let edge of this.G.adj(src)) {
+      if (edge == null) continue; // no cycles
+      const adjVtx = edge instanceof DiWEdge ? edge.to : edge;
+      if (this.marked[adjVtx]) continue;
+
+      if (edge instanceof DiWEdge) this._edges[adjVtx] = edge;
       this.dfs(adjVtx);
     }
 
     this._sorted.push(src);
   }
 
-  get sorted(): Stack<number> {
+  get sorted(): number[] {
     return this._sorted;
   }
 }
