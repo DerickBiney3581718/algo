@@ -7,7 +7,7 @@ export class WDigraph {
   _adj: LinkedList<DiWEdge>[];
   _edges: DiWEdge[] = [];
 
-  constructor(V: number, edges: DiWEdge[]) {
+  constructor(V: number, edges?: DiWEdge[]) {
     this.V = V;
     this._adj = Array.from({ length: V + 1 }, () => new LinkedList());
 

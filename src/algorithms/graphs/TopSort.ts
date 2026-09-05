@@ -36,10 +36,14 @@ export class TopSort {
       this.dfs(adjVtx);
     }
 
-    this._sorted.push(src);
+    this._sorted.push(src); //post processing push
   }
 
   get sorted(): number[] {
     return this._sorted;
+  }
+
+  getEdge(vtx: number): DiWEdge {
+    return this._edges[vtx];
   }
 }

@@ -15,7 +15,7 @@ export class DirectedCycle {
 
     this.marked = Array.from({ length: this.G.V + 1 });
 
-    for (let vtx = 1; vtx < this.G.V; vtx++) {
+    for (let vtx = 1; vtx <= this.G.V; vtx++) {
       if (this.marked[vtx] == true) continue;
       this.dfs(vtx);
     }

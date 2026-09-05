@@ -11,7 +11,6 @@ describe("TopSort", () => {
   const ts = new TopSort(DAG);
 
   it("sorts", () => {
-    console.log(`${ts.sorted}`);
-    expect(ts.sorted.size).toBe(tinyChain.V);
+    expect(ts.sorted.length).toBe(tinyChain.V);
   });
 });
